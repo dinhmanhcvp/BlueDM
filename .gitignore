@@ -1,0 +1,7 @@
+node_modules
+# mã khách, phiên Zalo (mã hoá), lộ trình: không bao giờ đưa lên git
+data
+.env
+.env.*
+*.tgz
+.claude/

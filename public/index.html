@@ -1,0 +1,860 @@
+<!doctype html>
+<html lang="vi" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Blue DM</title>
+<meta name="theme-color" content="#F3F5F9">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon.svg">
+<link rel="apple-touch-icon" href="/icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@500;600;700;800&display=swap">
+<script>
+  // chọn giao diện trước khi vẽ để không bị nháy màu
+  try { document.documentElement.dataset.theme = localStorage.getItem('theme') || 'light'; } catch {}
+</script>
+<style>
+  /* Sáng (mặc định): nền xám rất nhạt, thẻ trắng, chữ gần đen, 1 màu nhấn xanh chanh. Màu chỉ để báo trạng thái. */
+  :root {
+    --bg:#F3F5F9; --s1:#FFFFFF; --s2:#FFFFFF; --s3:#EBEEF4; --hair:rgba(17,19,24,.07); --hair2:rgba(17,19,24,.16);
+    --tx:#10131A; --mut:#667085; --faint:#A1A8B5;
+    --acc:#1F5BFF; --acc-ink:#FFFFFF; --acc-tx:#1F5BFF; --acc-soft:rgba(31,91,255,.10); --acc-line:#1F5BFF;
+    --warn:#F59E0B; --warn-tx:#B45309; --warn-soft:rgba(245,158,11,.14);
+    --bad:#E5484D; --bad-tx:#D12F35; --bad-soft:rgba(229,72,77,.1);
+    --shadow:0 1px 2px rgba(16,24,40,.05), 0 6px 16px rgba(16,24,40,.06);
+    --seg:#E4E8EF; --seg-sel:#FFFFFF; --map-bg:#E8ECF2; --scrim:rgba(17,19,24,.35);
+    color-scheme:light;
+  }
+  /* Tối: than chì dịu, không đen kịt */
+  :root[data-theme="dark"] {
+    --bg:#171A20; --s1:#1F232B; --s2:#262B34; --s3:#313742; --hair:rgba(255,255,255,.07); --hair2:rgba(255,255,255,.14);
+    --tx:#F3F5F9; --mut:#9AA1AE; --faint:#626A78;
+    --acc:#3D6BFF; --acc-tx:#8FADFF; --acc-soft:rgba(79,125,255,.16); --acc-line:rgba(110,150,255,.75);
+    --warn:#FFB547; --warn-tx:#FFB547; --warn-soft:rgba(255,181,71,.14);
+    --bad:#FF5A5F; --bad-tx:#FF7A7E; --bad-soft:rgba(255,90,95,.14);
+    --shadow:none; --seg:#171A20; --seg-sel:#313742; --map-bg:#1B1F26; --scrim:rgba(0,0,0,.55);
+    color-scheme:dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root[data-theme="auto"] {
+      --bg:#171A20; --s1:#1F232B; --s2:#262B34; --s3:#313742; --hair:rgba(255,255,255,.07); --hair2:rgba(255,255,255,.14);
+      --tx:#F3F5F9; --mut:#9AA1AE; --faint:#626A78;
+      --acc:#3D6BFF; --acc-tx:#8FADFF; --acc-soft:rgba(79,125,255,.16); --acc-line:rgba(110,150,255,.75);
+      --warn:#FFB547; --warn-tx:#FFB547; --warn-soft:rgba(255,181,71,.14);
+      --bad:#FF5A5F; --bad-tx:#FF7A7E; --bad-soft:rgba(255,90,95,.14);
+      --shadow:none; --seg:#171A20; --seg-sel:#313742; --map-bg:#1B1F26; --scrim:rgba(0,0,0,.55);
+      color-scheme:dark;
+    }
+  }
+  * { box-sizing:border-box; margin:0; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+  /* ô nhập phải gõ được (Safari cần tiền tố -webkit-) */
+  input, select, textarea { -webkit-user-select:text !important; user-select:text !important; -webkit-touch-callout:default; }
+  [hidden] { display:none !important; }
+  html, body { height:100%; }
+  body { background:var(--bg); color:var(--tx); font:500 16px/1.3 "Be Vietnam Pro",system-ui,sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; font-feature-settings:"tnum"; }
+  button, a.btn { font:inherit; color:inherit; background:none; border:0; cursor:pointer; text-decoration:none; }
+  input, select, textarea { font:inherit; color:var(--tx); background:var(--s3); border:1px solid var(--hair); border-radius:14px; padding:14px; width:100%; user-select:text; }
+  textarea { resize:none; min-height:96px; line-height:1.4; }
+  svg { flex:none; display:block; }
+  .mut { color:var(--mut); }
+  .num { font-variant-numeric:tabular-nums; letter-spacing:-.03em; }
+  .grow { flex:1; min-width:0; }
+  .card { background:var(--s1); box-shadow:var(--shadow); }
+
+  button, a, [role=button] { touch-action:manipulation; } /* chạm là nhận, không chờ xem có phải chạm đúp */
+  .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:52px; padding:0 16px; border-radius:16px; background:var(--s3); font-weight:700; white-space:nowrap; transition:transform .08s, filter .08s; }
+  .btn:active { transform:scale(.97); filter:brightness(.97); }
+  .btn.acc { background:var(--acc); color:var(--acc-ink); font-weight:800; }
+  .btn.bad { background:var(--bad); color:#fff; font-weight:800; }
+  .btn.soft-bad { background:var(--bad-soft); color:var(--bad-tx); }
+  .btn.line { background:transparent; border:1px solid var(--hair2); }
+  .btn:disabled { opacity:.4; }
+  .icon-btn { width:40px; height:40px; border-radius:14px; background:var(--s1); box-shadow:var(--shadow); display:grid; place-items:center; color:var(--tx); }
+  .icon-btn:active { transform:scale(.94); }
+  .label { font-size:11px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--mut); }
+
+  /* ---- Bố cục: trên (trạng thái + ghế) · giữa (dòng cuốc) · dưới (điểm dừng + tự bắt) ---- */
+  #app { height:100dvh; display:flex; flex-direction:column; padding:calc(8px + env(safe-area-inset-top)) 14px calc(12px + env(safe-area-inset-bottom)); gap:12px; }
+  .topbar { display:flex; align-items:center; gap:6px; }
+  .status { display:flex; align-items:center; gap:8px; min-width:0; font-size:15px; font-weight:800; }
+  .status .dot { width:9px; height:9px; border-radius:50%; background:var(--bad); flex:none; }
+  .status .dot.ok { background:var(--acc-line); box-shadow:0 0 0 4px var(--acc-soft); }
+  .status span { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .status small { color:var(--mut); font-weight:600; font-size:13px; }
+
+  .controls { border-radius:22px; padding:14px; display:flex; flex-direction:column; gap:12px; }
+  .seat-line { display:flex; align-items:center; gap:12px; }
+  #seats { flex:1; display:grid; grid-template-columns:repeat(var(--n), minmax(0, 1fr)); gap:6px; }
+  .seat { height:50px; border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:var(--mut); line-height:1.15; overflow:hidden; }
+  .seat b { font-size:16px; font-weight:800; }
+  .seat.on { background:var(--acc-soft); color:var(--acc-tx); }
+  .seat.long { background:var(--warn-soft); color:var(--warn-tx); }
+  .seat.wait { background:var(--s3); color:var(--tx); }
+  .seat.walk { background:var(--acc-soft); color:var(--acc-tx); }
+  .seat.empty { border:1.5px dashed var(--hair2); color:var(--faint); }
+  .seat:active { transform:scale(.95); }
+  .free { text-align:right; min-width:58px; }
+  .free b { display:block; font-size:30px; font-weight:800; line-height:1; letter-spacing:-.04em; }
+  .free span { font-size:12px; font-weight:700; color:var(--mut); }
+
+  /* ---- Dòng cuốc ---- */
+  #feedArea { flex:1; min-height:0; overflow-y:auto; display:flex; flex-direction:column; gap:10px; margin:-4px -14px 0; padding:4px 14px 2px; }
+  .ride { border-radius:22px; padding:16px; display:flex; flex-direction:column; gap:12px; border:1.5px solid transparent; }
+  .ride.top { border-color:var(--acc-line); }
+  .ride-head { display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; color:var(--mut); }
+  .ride-head .live { color:var(--acc-tx); display:inline-flex; align-items:center; gap:6px; font-weight:700; }
+  .ride-body { display:flex; align-items:flex-start; gap:12px; }
+  .stops2 { flex:1; min-width:0; display:flex; flex-direction:column; gap:4px; }
+  .stops2 div { display:flex; align-items:center; gap:10px; font-size:22px; font-weight:800; letter-spacing:-.02em; }
+  .stops2 div span { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .stops2 i { width:10px; height:10px; border-radius:50%; border:2.5px solid var(--tx); flex:none; }
+  .stops2 div + div i { background:var(--tx); }
+  .stops2 div + div { color:var(--mut); }
+  .detour { text-align:right; }
+  .detour b { display:block; font-size:36px; font-weight:800; letter-spacing:-.05em; line-height:1; }
+  .detour span { font-size:12px; font-weight:700; color:var(--mut); }
+  .detour.near b { color:var(--warn-tx); }
+  .meta { font-size:15px; font-weight:600; color:var(--mut); display:flex; flex-wrap:wrap; gap:4px 12px; }
+  .meta b { color:var(--tx); font-weight:700; }
+  .ride-acts { display:grid; grid-template-columns:64px 1fr; gap:10px; }
+  .ride-acts .btn { min-height:64px; border-radius:18px; font-size:20px; }
+  .ride.top .ride-acts .btn { min-height:72px; }
+  .take { position:relative; overflow:hidden; }
+  .bar { position:absolute; left:0; bottom:0; height:5px; width:100%; background:rgba(255,255,255,.65); }
+
+  /* Cuốc khác (bộ lọc loại / chưa rõ tuyến): gập lại, mỗi tin 1 dòng, chạm mới mở để nhận tay */
+  .others { border-radius:20px; overflow:hidden; }
+  .others-h { display:flex; align-items:center; gap:10px; width:100%; min-height:54px; padding:0 16px; font-weight:800; color:var(--mut); }
+  .others-h .n { min-width:24px; height:24px; padding:0 7px; border-radius:12px; background:var(--s3); color:var(--tx); font-size:13px; display:grid; place-items:center; }
+  .orow { border-top:1px solid var(--hair); }
+  .orow-h { display:flex; align-items:center; gap:10px; width:100%; min-height:56px; padding:8px 16px; text-align:left; }
+  .orow-h b { display:block; font-size:16px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .orow-h small { display:block; font-size:13px; font-weight:600; color:var(--mut); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .orow p { padding:0 16px; font-size:15px; line-height:1.45; color:var(--mut); }
+  .orow .acts { display:grid; grid-template-columns:1fr 52px 1.4fr; gap:8px; padding:10px 16px 14px; }
+  .orow .acts .btn { min-height:52px; }
+
+  /* Radar khi chưa có cuốc */
+  .radar { flex:1; min-height:150px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; text-align:center; }
+  .rings { position:relative; width:84px; height:84px; display:grid; place-items:center; }
+  .rings::before, .rings::after, .rings i { content:""; position:absolute; inset:0; border-radius:50%; border:1.5px solid var(--acc-line); animation:ring 3s cubic-bezier(.2,.6,.3,1) infinite; opacity:0; }
+  .rings::after { animation-delay:1s; } .rings i { animation-delay:2s; }
+  .rings.off::before, .rings.off::after, .rings.off i { animation:none; opacity:.4; border-color:var(--hair2); }
+  .rings b { width:18px; height:18px; border-radius:50%; background:var(--acc); box-shadow:0 0 0 8px var(--acc-soft); }
+  .rings.off b { background:var(--faint); box-shadow:none; }
+  @keyframes ring { 0% { transform:scale(.2); opacity:.9; } 100% { transform:scale(1); opacity:0; } }
+  .radar h2 { font-size:20px; font-weight:800; letter-spacing:-.02em; }
+
+  /* ---- Dưới ---- */
+  .nextbar { display:flex; align-items:center; gap:12px; border-radius:20px; padding:10px 10px 10px 16px; min-height:64px; width:100%; text-align:left; cursor:pointer; }
+  .nextbar .t { font-size:16px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .nextbar .s { font-size:13px; color:var(--mut); font-weight:600; }
+  .nextbar .s.warn { color:var(--warn-tx); }
+  .nextbar .btn { min-height:44px; padding:0 12px; border-radius:12px; font-size:14px; }
+  .bottom-row { display:flex; gap:10px; }
+  .det { width:88px; flex:none; border-radius:22px; background:var(--s1); box-shadow:var(--shadow); display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .det b { font-size:22px; font-weight:800; letter-spacing:-.03em; }
+  .det span { font-size:11px; font-weight:700; color:var(--mut); }
+  .det:active, .auto:active { transform:scale(.97); }
+  .auto { display:flex; align-items:center; gap:14px; width:100%; min-height:72px; padding:0 18px; border-radius:22px; background:var(--s1); box-shadow:var(--shadow); text-align:left; }
+  .auto.on { background:var(--acc); color:var(--acc-ink); }
+  .auto .t { font-size:18px; font-weight:800; letter-spacing:-.01em; }
+  .auto .s { font-size:13px; font-weight:600; opacity:.7; margin-top:2px; }
+  .switch { width:58px; height:34px; border-radius:999px; background:var(--s3); position:relative; flex:none; }
+  .switch::after { content:""; position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.25); transition:transform .2s; }
+  .auto.on .switch { background:rgba(255,255,255,.3); } .auto.on .switch::after { transform:translateX(24px); background:#fff; }
+  .toast { position:fixed; left:14px; right:14px; top:calc(60px + env(safe-area-inset-top)); z-index:700; display:flex; gap:10px; align-items:center; padding:14px 16px; border-radius:18px; background:var(--acc); color:#fff; font-weight:800; box-shadow:0 12px 30px rgba(31,91,255,.35); }
+  .toast svg { color:#fff; }
+  .toast span { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  /* ---- Lớp phủ ---- */
+  .sheet { position:fixed; inset:0; z-index:800; background:var(--scrim); display:flex; align-items:flex-end; }
+  .sheet > div { width:100%; max-height:84dvh; overflow-y:auto; background:var(--s1); border-radius:26px 26px 0 0; padding:10px 16px calc(18px + env(safe-area-inset-bottom)); }
+  .grab { width:40px; height:5px; border-radius:3px; background:var(--hair2); margin:0 auto 14px; }
+  .stop { display:grid; grid-template-columns:52px 1fr; gap:12px; padding:14px 0; border-top:1px solid var(--hair); }
+  .stop time { font-weight:800; font-size:16px; padding-top:2px; }
+  .stop .nm { font-size:19px; font-weight:800; }
+  .stop .sub { font-size:13px; font-weight:600; color:var(--mut); margin-top:2px; }
+  .stop .sub.warn { color:var(--warn-tx); }
+  .stop .acts { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+  .stop .acts .btn { min-height:44px; padding:0 12px; font-size:14px; border-radius:12px; }
+  #mapView { position:fixed; inset:0; z-index:850; background:var(--bg); }
+  #map { position:absolute; inset:0; background:var(--map-bg); }
+  .map-top { position:absolute; z-index:1000; top:calc(12px + env(safe-area-inset-top)); left:14px; right:14px; display:flex; gap:8px; align-items:center; }
+  .map-chip { background:var(--s1); border-radius:14px; padding:0 14px; height:44px; display:flex; align-items:center; gap:8px; font-size:14px; font-weight:800; box-shadow:0 6px 20px rgba(0,0,0,.18); }
+  .mk { width:26px; height:26px; border-radius:50%; display:grid; place-items:center; font:800 12px "Be Vietnam Pro",sans-serif; color:#111318; background:#fff; border:3px solid #111318; }
+  .mk.dropoff { background:var(--acc); color:#fff; }
+  .car { width:22px; height:22px; border-radius:50%; background:var(--acc); border:4px solid #fff; box-shadow:0 0 0 6px var(--acc-soft), 0 2px 6px rgba(0,0,0,.3); }
+  .leaflet-container { background:var(--map-bg); }
+
+  #login { max-width:400px; margin:0 auto; padding:22vh 20px 0; display:flex; flex-direction:column; gap:12px; text-align:center; }
+  .brand { display:flex; align-items:center; justify-content:center; gap:14px; margin-bottom:4px; }
+  .brand img { width:56px; height:56px; border-radius:13px; box-shadow:0 8px 24px rgba(31,91,255,.28); }
+  .brand span { font-size:38px; font-weight:800; letter-spacing:-.045em; }
+  .brand b { color:var(--acc-tx); font-weight:800; }
+  .topbar .logo { width:32px; height:32px; border-radius:9px; flex:none; }
+  #login input { text-align:center; font-size:24px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; background:var(--s1); box-shadow:var(--shadow); }
+  #login .btn { min-height:60px; font-size:18px; }
+  #panel { position:fixed; inset:0; background:var(--bg); overflow-y:auto; padding:calc(12px + env(safe-area-inset-top)) 14px 32px; z-index:900; }
+  .panel-head { display:flex; align-items:center; gap:12px; }
+  .panel-head h2 { flex:1; font-size:24px; font-weight:800; letter-spacing:-.02em; }
+  .group { border-radius:22px; padding:16px; margin-top:14px; display:flex; flex-direction:column; gap:10px; }
+  .hint { font-size:13px; color:var(--mut); }
+  .grp { display:grid; grid-template-columns:1fr auto auto auto; gap:6px; align-items:center; padding:8px 0; border-top:1px solid var(--hair); font-weight:600; }
+  .grp .btn { min-height:40px; padding:0 10px; font-size:13px; border-radius:10px; }
+  .grp .btn.on { background:var(--acc-soft); color:var(--acc-tx); }
+  .samples .btn { justify-content:flex-start; text-align:left; font-weight:600; font-size:14px; width:100%; min-height:44px; margin-top:6px; white-space:normal; }
+  .feed { font-size:14px; padding:10px 0; border-top:1px solid var(--hair); }
+  .feed.skip { opacity:.55; }
+  .overlay { position:fixed; inset:0; background:var(--bg); z-index:950; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; padding:20px; text-align:center; }
+  .overlay img { width:min(280px, 80vw); background:#fff; padding:12px; border-radius:18px; box-shadow:var(--shadow); }
+  .overlay .btn { width:100%; max-width:360px; }
+  .steps { display:flex; gap:6px; }
+  .steps span { padding:5px 12px; border-radius:999px; font-size:13px; font-weight:700; background:var(--s3); color:var(--mut); }
+  .steps span.on { background:var(--acc); color:var(--acc-ink); }
+  .warn-box { background:var(--bad-soft); color:var(--bad-tx); border-radius:14px; padding:10px 14px; font-size:14px; font-weight:700; max-width:360px; }
+  .check { display:flex; gap:12px; align-items:center; padding:14px; border-radius:14px; background:var(--warn-soft); color:var(--warn-tx); font-weight:700; cursor:pointer; }
+  .check input { width:26px; height:26px; flex:none; accent-color:var(--acc-tx); }
+  #dim { position:fixed; inset:0; background:rgba(0,0,0,.95); z-index:990; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; text-align:center; cursor:pointer; }
+  #dim .a { color:rgba(110,150,255,.6); font-weight:800; letter-spacing:.12em; font-size:12px; line-height:1.7; }
+  #dim .b { color:rgba(244,244,245,.5); font-size:44px; font-weight:800; letter-spacing:-.03em; }
+  #dim .hint { color:#62656D; }
+</style>
+</head>
+<body>
+<div id="login">
+  <h1 class="brand"><img src="/icon.svg" alt=""><span>Blue <b>DM</b></span></h1>
+  <p class="mut">Canh cuốc Zalo, tự nhận cuốc thuận đường</p>
+  <input id="code" placeholder="MÃ KÍCH HOẠT" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="go" inputmode="text" aria-label="Mã kích hoạt">
+  <button class="btn acc" id="enter">Bắt đầu chạy xe</button>
+  <p class="mut">Chạy thử: nhập <b>DEMO</b> · <a href="/huong-dan.html" style="color:var(--acc-tx);font-weight:700">Hướng dẫn sử dụng</a></p>
+  <p id="loginErr" style="color:var(--bad-tx)"></p>
+</div>
+
+<div id="app" hidden>
+  <header class="topbar">
+    <img class="logo" src="/icon.svg" alt="Blue DM">
+    <div class="status grow"><span class="dot" id="zdot"></span><span id="zline"></span></div>
+    <button class="icon-btn" id="testBtn" hidden aria-label="Giả lập 1 tin Zalo"></button>
+    <button class="icon-btn" id="openPanel" aria-label="Cài đặt"></button>
+  </header>
+
+  <section class="controls card">
+    <div class="seat-line"><div id="seats" aria-label="Ghế trên xe"></div><div class="free" id="free"></div></div>
+  </section>
+
+  <main id="feedArea"></main>
+
+  <div class="nextbar card" id="nextbar" role="button" tabindex="0" aria-label="Xem lộ trình"></div>
+  <div class="bottom-row">
+    <button class="auto" data-auto="1" id="autoRow"></button>
+    <button class="det" data-cycle="1" id="detBtn" aria-label="Đổi mức lệch tối đa"></button>
+  </div>
+</div>
+<div id="toast"></div>
+
+<div id="stopsSheet" class="sheet" hidden><div><div class="grab"></div><div class="panel-head"><h2>Lộ trình</h2><button class="icon-btn" id="mapBtn" aria-label="Bản đồ"></button><button class="icon-btn" id="closeStops" aria-label="Đóng"></button></div><div id="stopList"></div></div></div>
+
+<div id="editSheet" class="sheet" hidden>
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <div class="grab"></div>
+    <h3 style="font-size:20px">Sửa câu trả lời</h3>
+    <p class="hint" id="editSrc" style="display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden"></p>
+    <textarea id="editText" maxlength="300" aria-label="Câu trả lời gửi vào nhóm"></textarea>
+    <button class="btn acc" id="editSend">Gửi &amp; nhận cuốc</button>
+    <button class="btn line" id="editCancel">Thôi</button>
+  </div>
+</div>
+
+<div id="mapView" hidden>
+  <div id="map"></div>
+  <div class="map-top"><span class="map-chip grow" id="mapInfo"></span><button class="icon-btn" id="closeMap" aria-label="Đóng bản đồ"></button></div>
+</div>
+
+<div id="panel" hidden>
+  <div class="panel-head"><h2>Cài đặt</h2><button class="icon-btn" id="closePanel" aria-label="Đóng"></button></div>
+  <div class="group card">
+    <span class="label">Giao diện</span>
+    <button class="btn" id="dimBtn">Màn tối tiết kiệm pin</button>
+    <select id="theme" aria-label="Giao diện">
+      <option value="light">Sáng (dễ đọc ban ngày)</option>
+      <option value="dark">Tối (đỡ chói ban đêm)</option>
+      <option value="auto">Tự động theo điện thoại</option>
+    </select>
+  </div>
+  <div class="group card">
+    <span class="label">Tuyến &amp; xe</span>
+    <select id="dest" aria-label="Điểm cuối tuyến"></select>
+    <select id="seatsTotal" aria-label="Loại xe"><option value="4">Xe 4 chỗ · 4 khách</option><option value="6">Xe 7 chỗ · 6 khách</option><option value="15">Xe 16 chỗ · 15 khách</option></select>
+  </div>
+  <div class="group card">
+    <span class="label">Tự bắt cuốc</span>
+    <select id="grace" aria-label="Đếm ngược trước khi tự nhận">
+      <option value="0">Chốt ngay 0s · tranh cuốc giờ cao điểm</option>
+      <option value="3">Đếm ngược 3s · kịp bấm huỷ</option>
+      <option value="5">Đếm ngược 5s</option>
+    </select>
+    <select id="claimMode" aria-label="Cách chốt trên Zalo">
+      <option value="reply">Chốt: trả lời trích dẫn trong nhóm</option>
+      <option value="inbox">Chốt: thả tim + nhắn riêng người đăng</option>
+    </select>
+    <input id="reply" placeholder="Câu chốt. Trống = câu ngẫu nhiên chống khoá. Vd: Ok" maxlength="100">
+    <p class="hint">Tin có code (vd. "code 88") tự thêm code: "Ok 88".</p>
+    <input id="block" placeholder="Từ khoá chặn. Vd: hàng, ship, bao xe">
+    <input id="allow" placeholder="Từ khoá luôn báo. Vd: lái hộ, Lương Sơn">
+  </div>
+  <div class="group card">
+    <span class="label">Zalo</span>
+    <div id="zstatus" style="font-weight:700"></div>
+    <input id="mainPhone" type="tel" inputmode="numeric" placeholder="Số điện thoại chính (khách gọi số này)" aria-label="Số điện thoại chính">
+    <p class="hint">Nick phụ đi chốt sẽ ghi kèm "alo số em: 09xx.xxx.xxx".</p>
+    <button class="btn acc" id="zalo">Kết nối Zalo (quét QR)</button>
+    <button class="btn soft-bad" id="unlink" hidden>Gỡ liên kết Zalo này</button>
+  </div>
+  <div class="group card">
+    <span class="label">Nhóm Zalo</span>
+    <p class="hint">Canh: đọc nhóm này · Tự: cho tự bắt cuốc · Đợi 1p: nhóm cấm trả lời trong phút đầu</p>
+    <div id="groupList"></div>
+  </div>
+  <div class="group card">
+    <span class="label">Chạy thử không cần Zalo</span>
+    <select id="simFrom" aria-label="Điểm xuất phát"></select>
+    <button class="btn" id="sim"></button>
+    <div class="samples" id="samples"></div>
+    <input id="msg" placeholder="Gõ tin nhóm rồi Enter…">
+  </div>
+  <div class="group card">
+    <span class="label">Tin gần đây</span>
+    <div id="feed"></div>
+  </div>
+  <a class="btn line" href="/huong-dan.html" style="width:100%;margin-top:14px">Hướng dẫn sử dụng</a>
+  <p class="hint" id="lic" style="margin-top:14px"></p>
+</div>
+
+<div id="qr" class="overlay" style="display:none">
+  <div class="steps" id="qrSteps"></div>
+  <b>Mở Zalo trên điện thoại khác → Quét mã QR</b>
+  <img alt="Mã QR đăng nhập Zalo">
+  <div class="warn-box">Không chụp ảnh mã rồi quét từ ảnh: Zalo sẽ từ chối. Phải quét trực tiếp trên màn hình.</div>
+  <p class="hint">Chỉ có 1 điện thoại? Gửi link sang máy tính / máy người thân, hoặc gửi Admin mở hộ.</p>
+  <button class="btn acc" id="qrShare">Gửi mã QR sang máy khác</button>
+  <button class="btn" id="qrCopy">Copy link QR gửi Admin</button>
+  <button class="btn line" onclick="this.parentNode.style.display='none'">Đóng</button>
+</div>
+
+<div id="terms" class="sheet" hidden>
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <div class="grab"></div>
+    <h3 style="font-size:20px">Trước khi kết nối Zalo</h3>
+    <p>Hệ thống dùng công nghệ tự động trên Zalo cá nhân. Để bảo vệ tài khoản chính, bác nên dùng <b>tài khoản Zalo phụ</b> để vào nhóm và tự bắt cuốc.</p>
+    <p class="hint">Hệ thống không chịu trách nhiệm nếu Zalo khoá tạm thời tính năng chat do tần suất nhận cuốc cao.</p>
+    <label class="check"><input type="checkbox" id="termsOk"> Tôi đã hiểu và đồng ý dùng tài khoản phụ</label>
+    <button class="btn acc" id="termsGo" disabled>Đồng ý &amp; kết nối</button>
+    <button class="btn line" id="termsNo">Để sau</button>
+  </div>
+</div>
+
+<div id="dim" hidden>
+  <div class="a">ĐANG CANH CUỐC ZALO<br>KHÔNG TẮT MÀN HÌNH</div>
+  <div class="b num" id="dimSeat"></div>
+  <div class="hint">Chạm để mở sáng</div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+// chỉ vẽ lại khi nội dung đổi, để cú chạm lúc xe xóc không rơi vào nút vừa bị thay
+const set = (el, h) => { if (el._h !== h) el.innerHTML = el._h = h; };
+const fmtTime = ms => new Date(ms).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+const ago = ms => { const m = Math.floor((Date.now() - ms) / 60000); return m < 1 ? 'vừa xong' : `${m} phút trước`; };
+
+// Bộ icon nét (24px, stroke 2)
+const P = {
+  nav: '<path d="M3 11l19-9-9 19-2-8-8-2z"/>',
+  phone: '<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.5 2.7.6a2 2 0 0 1 1.7 2z"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>',
+  x: '<path d="M18 6 6 18M6 6l12 12"/>',
+  moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/>',
+  sliders: '<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>',
+  flask: '<path d="M9 3h6M10 3v6L4.5 19a1.5 1.5 0 0 0 1.3 2h12.4a1.5 1.5 0 0 0 1.3-2L14 9V3"/>',
+  map: '<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  zap: '<path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>',
+  edit: '<path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+  share: '<path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7M16 6l-4-4-4 4M12 2v13"/>',
+  chev: '<path d="m6 9 6 6 6-6"/>',
+  up: '<path d="m6 15 6-6 6 6"/>',
+};
+const ic = (n, s = 22) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]}</svg>`;
+
+let code = localStorage.getItem('code') || '', S = null, es, audio, lastToast = null, othersOpen = false, openId = null, editId = null;
+
+const SAMPLES = [
+  'Cần 2 ghế Phúc Yên đi Cầu Giấy, đi luôn. 0912.345.678 200k',
+  'Xe 7c VY-HN còn 3 ghế ae ib',
+  'Có 1 khách Mê Linh đi Thanh Xuân',
+  'Tam Đảo về Hà Đông 1 người',
+  'Đón 1 khách Nội Bài về Hoàn Kiếm 0901222333',
+  'Bao xe Hà Nội lên Vĩnh Yên',
+  '1 khách Quang Minh đi Long Biên',
+  '1k chợ Lương Sơn đi Bv Nam Học 300k Ct. code 88',
+  '12h30 1 khách Bình Xuyên đi Mỹ Đình 200k code 12',
+];
+let sampleIdx = 0;
+
+// server trả trạng thái mới ngay trong phản hồi → chạm là màn hình đổi, không chờ lần đẩy kế tiếp
+const api = (a, b = {}) => fetch(`/api/${a}?code=${encodeURIComponent(code)}`, { method: 'POST', body: JSON.stringify(b) })
+  .then(r => r.ok ? r.json() : null).then(apply).catch(() => {});
+
+function speak(t) {
+  try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t); u.lang = 'vi-VN'; u.rate = 1.15; speechSynthesis.speak(u); } catch {}
+}
+function beep(f = 1200) {
+  try {
+    const o = audio.createOscillator(), g = audio.createGain();
+    o.frequency.value = f; g.gain.value = .25; o.connect(g).connect(audio.destination);
+    o.start(); o.stop(audio.currentTime + .12);
+  } catch {}
+}
+async function keepAwake() { try { await navigator.wakeLock?.request('screen'); } catch {} }
+// iOS: phát vòng lặp âm thanh im lặng để phiên âm thanh luôn mở, giọng đọc báo cuốc ra loa ngay
+function silentLoop() {
+  const n = 8000, b = new Uint8Array(44 + n), v = new DataView(b.buffer), w = (o, s) => [...s].forEach((c, i) => b[o + i] = c.charCodeAt(0));
+  w(0, 'RIFF'); v.setUint32(4, 36 + n, true); w(8, 'WAVEfmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, 8000, true); v.setUint32(28, 8000, true); v.setUint16(32, 1, true); v.setUint16(34, 8, true); w(36, 'data'); v.setUint32(40, n, true);
+  b.fill(128, 44); // 8-bit PCM: 128 là im lặng
+  const a = new Audio(URL.createObjectURL(new Blob([b], { type: 'audio/wav' })));
+  a.loop = true; a.setAttribute('playsinline', ''); a.play().catch(() => {});
+}
+// lỡ tắt màn hình: iOS đóng băng trang, nên nhắc ngay khi mở lại
+let hiddenAt = 0;
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { hiddenAt = Date.now(); return; }
+  keepAwake();
+  if (S && hiddenAt && Date.now() - hiddenAt > 3000) speak('Lưu ý: Bác vui lòng để màn hình luôn sáng trên taplo để nghe báo cuốc xe.');
+  hiddenAt = 0;
+});
+
+// ---------- Giao diện sáng / tối ----------
+const isDark = () => { const t = document.documentElement.dataset.theme; return t === 'dark' || (t === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches); };
+function applyTheme(t) {
+  document.documentElement.dataset.theme = t;
+  try { localStorage.setItem('theme', t); } catch {}
+  document.querySelector('meta[name=theme-color]').content = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+}
+
+// ---------- Bản đồ (mở khi cần): Google Maps + giao thông nếu có khoá, không thì bản đồ mở ----------
+const DARK = [
+  { elementType: 'geometry', stylers: [{ color: '#1f2228' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#9a9da6' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#17191e' }] },
+  { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+  { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#30343c' }] },
+  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#3d424c' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#14161a' }] },
+];
+const LIGHT = [{ featureType: 'poi', stylers: [{ visibility: 'off' }] }, { featureType: 'transit', stylers: [{ visibility: 'off' }] }];
+// Giải mã polyline của Google (thuật toán chuẩn)
+function decodePolyline(s) {
+  const out = []; let i = 0, lat = 0, lng = 0;
+  while (i < s.length) {
+    for (const k of [0, 1]) {
+      let b, shift = 0, r = 0;
+      do { b = s.charCodeAt(i++) - 63; r |= (b & 31) << shift; shift += 5; } while (b >= 32);
+      const d = r & 1 ? ~(r >> 1) : r >> 1;
+      k ? lng += d : lat += d;
+    }
+    out.push([lat / 1e5, lng / 1e5]);
+  }
+  return out;
+}
+let mapView = null, mapLoading = null, fitSig = '';
+
+function googleMap(el) {
+  const m = new google.maps.Map(el, { center: { lat: 21.15, lng: 105.72 }, zoom: 11, disableDefaultUI: true, gestureHandling: 'greedy', clickableIcons: false, styles: isDark() ? DARK : LIGHT });
+  new google.maps.TrafficLayer().setMap(m);
+  const line = new google.maps.Polyline({ map: m, strokeColor: '#1F5BFF', strokeWeight: 6, strokeOpacity: .9, zIndex: 5 });
+  const car = new google.maps.Marker({ map: m, zIndex: 99, icon: { path: google.maps.SymbolPath.CIRCLE, scale: 9, fillColor: '#1F5BFF', fillOpacity: 1, strokeColor: '#FFFFFF', strokeWeight: 4 } });
+  let pins = [];
+  return {
+    update(carP, stops, path) {
+      car.setPosition(carP);
+      pins.forEach(p => p.setMap(null));
+      pins = stops.map((x, i) => new google.maps.Marker({ map: m, position: x, zIndex: 50,
+        label: { text: String(i + 1), color: x.type === 'pickup' ? '#10131A' : '#FFFFFF', fontWeight: '800', fontSize: '12px' },
+        icon: { path: google.maps.SymbolPath.CIRCLE, scale: 13, fillColor: x.type === 'pickup' ? '#FFFFFF' : '#1F5BFF', fillOpacity: 1, strokeColor: '#10131A', strokeWeight: 3 } }));
+      line.setPath(path.map(([lat, lng]) => ({ lat, lng })));
+    },
+    fit(points) {
+      if (points.length < 2) return m.panTo(points[0]);
+      const b = new google.maps.LatLngBounds(); points.forEach(p => b.extend(p)); m.fitBounds(b, { top: 110, bottom: 40, left: 40, right: 40 });
+    },
+  };
+}
+function leafletMap(el) {
+  const m = L.map(el, { zoomControl: false, attributionControl: false }).setView([21.15, 105.72], 11);
+  L.tileLayer(`https://{s}.basemap.cartocdn.com/${isDark() ? 'dark_all' : 'rastertiles/voyager'}/{z}/{x}/{y}{r}.png`).addTo(m);
+  const line = L.polyline([], { color: isDark() ? '#8FADFF' : '#1F5BFF', weight: 6, opacity: .85 }).addTo(m);
+  const car = L.marker([0, 0], { icon: L.divIcon({ className: '', html: '<div class="car"></div>', iconSize: [22, 22], iconAnchor: [11, 11] }), zIndexOffset: 1000 }).addTo(m);
+  const pins = L.layerGroup().addTo(m);
+  return {
+    update(carP, stops, path) {
+      car.setLatLng(carP); pins.clearLayers();
+      stops.forEach((x, i) => L.marker(x, { icon: L.divIcon({ className: '', html: `<div class="mk ${x.type}">${i + 1}</div>`, iconSize: [26, 26], iconAnchor: [13, 13] }) }).addTo(pins));
+      line.setLatLngs(path);
+    },
+    fit(points) {
+      if (points.length < 2) return m.panTo(points[0]);
+      m.fitBounds(L.latLngBounds(points.map(x => [x.lat, x.lng])), { paddingTopLeft: [40, 110], paddingBottomRight: [40, 40] });
+    },
+    resize: () => m.invalidateSize(),
+  };
+}
+// thư viện bản đồ mở chỉ tải khi cần: vào app nhanh hơn
+const loadLeaflet = () => new Promise((ok, fail) => {
+  const css = document.createElement('link'); css.rel = 'stylesheet';
+  css.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css'; document.head.append(css);
+  const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';
+  s.onload = ok; s.onerror = fail; document.head.append(s);
+});
+// bản đồ chỉ tải khi tài xế mở: đỡ tốn lượt tải bản đồ Google
+function openMap() {
+  $('#mapView').hidden = false;
+  mapLoading ??= (async () => {
+    const { mapsKey } = await fetch('/config').then(r => r.json()).catch(() => ({}));
+    if (mapsKey) {
+      try {
+        await new Promise((ok, fail) => {
+          window.__gmReady = ok;
+          const s = document.createElement('script');
+          s.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(mapsKey)}&v=weekly&language=vi&region=VN&loading=async&callback=__gmReady`;
+          s.onerror = fail; document.head.append(s);
+        });
+        return googleMap($('#map'));
+      } catch {}
+    }
+    await loadLeaflet();
+    return leafletMap($('#map'));
+  })().then(v => mapView = v);
+  mapLoading.then(() => { mapView.resize?.(); fitSig = ''; drawMap(S); });
+}
+function drawMap(s) {
+  if (!mapView || $('#mapView').hidden) return;
+  const carP = { lat: s.st.pos.lat, lng: s.st.pos.lng };
+  // có đường thật từ Google thì vẽ theo đường, không thì nối thẳng các điểm
+  const path = s.polyline ? decodePolyline(s.polyline) : [carP, ...s.stops].map(p => [p.lat, p.lng]);
+  mapView.update(carP, s.stops, path);
+  const sig = s.stops.map(x => x.rideId + x.type).join() + (s.polyline ? 1 : 0);
+  if (sig !== fitSig) { fitSig = sig; mapView.fit([carP, ...s.stops]); }
+}
+
+async function enter() {
+  code = $('#code').value.trim().toUpperCase() || code;
+  speak('Sẵn sàng'); // iOS chỉ cho phát âm thanh sau 1 lần chạm
+  try { audio = new (window.AudioContext || window.webkitAudioContext)(); } catch {}
+  silentLoop();
+  keepAwake();
+  connect(); // nối ngay, danh bạ địa danh (chỉ dùng trong cài đặt) tải song song
+  const names = await fetch('/landmarks').then(r => r.json());
+  const opts = names.map(n => `<option>${esc(n)}</option>`).join('');
+  $('#dest').innerHTML = opts; $('#simFrom').innerHTML = opts; $('#simFrom').value = 'Vĩnh Yên';
+  if (S) $('#dest').value = S.st.dest;
+}
+
+// chỉ vẽ bản mới hơn bản đang có (phản hồi chạm và luồng đẩy có thể đến lệch thứ tự)
+const apply = s => { if (s?.type === 'state' && !(S && s.v < S.v)) { for (const o of ops) o(s); render(s); } };
+
+// Nhận trạng thái: ưu tiên luồng trực tiếp (SSE); proxy giữ luồng (Cloudflare, một số mạng 4G) thì hỏi định kỳ
+let polling = false, gotStream = false, saySeen = 0;
+function connect() {
+  es?.close(); gotStream = false; $('#loginErr').textContent = '';
+  es = new EventSource(`/events?code=${encodeURIComponent(code)}`);
+  es.onmessage = e => {
+    gotStream = true;
+    const m = JSON.parse(e.data);
+    if (m.type === 'say') { if ((m.id || 0) > saySeen) { saySeen = m.id || saySeen; speak(m.text); } } else apply(m);
+  };
+  // đã vào rồi thì mạng chập chờn để EventSource tự nối lại; chưa vào được thì để /state báo lý do
+  es.onerror = () => { if (!S && !polling) { es.close(); poll(true); } };
+  // hỏi trạng thái ngay song song với luồng: vào app sau ~1 lượt mạng; luồng chạy được thì long-poll tự dừng
+  if (!polling) poll(true);
+  setTimeout(() => { if (!gotStream) es.close(); }, 3000); // luồng bị proxy giữ thì đóng, chỉ dùng long-poll
+}
+// long-poll: server giữ câu hỏi tới khi có thay đổi rồi trả ngay → gần tức thì, qua được mọi proxy
+async function poll(first) {
+  polling = true;
+  try {
+    const r = await fetch(`/state?code=${encodeURIComponent(code)}&after=${saySeen}${first ? '' : `&wait=1&v=${S?.v || 0}`}`);
+    if (r.status === 403) { polling = false; $('#loginErr').textContent = 'Mã sai hoặc đã hết hạn'; return; }
+    const d = await r.json();
+    if (!first) for (const x of d.says) speak(x.text); // lần đầu không đọc lại câu cũ
+    saySeen = d.sayId;
+    apply(d.state);
+    if (gotStream) { polling = false; es.onerror = null; return; } // luồng trực tiếp đã chạy, khỏi hỏi nữa
+    poll(false);
+  } catch {
+    if (!S) $('#loginErr').textContent = 'Mất mạng, đang thử lại…';
+    setTimeout(() => poll(false), 2000);
+  }
+}
+
+const LONG = 80; // phút: khách ngồi lâu cần ưu tiên trả
+const navUrl = x => `https://www.google.com/maps/dir/?api=1&destination=${x.lat},${x.lng}&travelmode=driving`;
+const mins = m => m < 1 ? 'tới nơi' : m >= 60 ? `${Math.floor(m / 60)}h${String(Math.round(m % 60)).padStart(2, '0')}` : `${Math.round(m)}p`;
+const defaultReply = f => (S.cfg.reply || 'Ok') + (f.code ? ' ' + f.code : '');
+
+function seatTiles(s) {
+  const tiles = [];
+  for (const x of s.stops.filter(x => x.type === 'dropoff')) {
+    for (let i = 0; i < x.seats; i++) tiles.push(x.seated === null
+      ? `<div class="seat wait"><b>Đón</b>chờ</div>`
+      : `<div class="seat ${x.seated >= LONG ? 'long' : 'on'}"><b class="num">${x.seated}p</b>đã ngồi</div>`);
+  }
+  for (let i = 0; i < s.st.walkIns; i++) tiles.push(`<button class="seat walk" data-free="${s.free + 1}" aria-label="Mở ghế khách lẻ">${ic('check', 18)}lẻ</button>`);
+  for (let i = 0; i < Math.max(0, s.free); i++) tiles.push(`<button class="seat empty" data-free="${s.free - 1}" aria-label="Khoá 1 ghế cho khách dọc đường">${ic('plus', 18)}</button>`);
+  return tiles;
+}
+
+// Thẻ cuốc hợp đường (đã lọc theo tuyến)
+function rideCard(f, s, top) {
+  const pending = f.status === 'pending', near = f.detour > s.st.maxDetour * .7;
+  const head = [f.group, f.time && (f.time === 'Đi ngay' ? f.time : 'Đón ' + f.time)].filter(Boolean).map(esc).join(' · ');
+  return `<article class="ride card ${top ? 'top' : ''}">
+    ${head || f.live ? `<div class="ride-head"><span class="grow" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${head}</span>
+      ${f.live ? `<span class="live">${ic('zap', 14)}Giao thông thực</span>` : ''}</div>` : ''}
+    <div class="ride-body">
+      <div class="stops2"><div><i></i><span>${esc(f.pickup)}</span></div><div><i></i><span>${esc(f.dropoff)}</span></div></div>
+      <div class="detour ${near ? 'near' : ''}"><b class="num">+${f.detour}</b><span>phút vòng</span></div>
+    </div>
+    <div class="meta"><span><b>${f.seats}</b> ghế</span>${f.price ? `<span><b>${f.price / 1000}k</b></span>` : ''}${f.code ? `<span>code <b>${esc(f.code)}</b></span>` : ''}</div>
+    <div class="ride-acts">
+      ${pending
+        ? `<button class="btn acc" data-accept="${f.id}" aria-label="Chốt luôn">${ic('check', 26)}</button>
+           <button class="btn bad take" data-reject="${f.id}">Huỷ tự nhận · <span class="cd num" data-deadline="${f.deadline}" data-total="${s.st.grace * 1000}"></span><i class="bar"></i></button>`
+        : `<button class="btn soft-bad" data-reject="${f.id}" aria-label="Bỏ qua">${ic('x', 26)}</button>
+           <button class="btn acc take" data-accept="${f.id}">Nhận ngay</button>`}
+    </div>
+  </article>`;
+}
+
+// Cuốc khác: bộ lọc đã loại hoặc chưa rõ tuyến. Gập lại, mỗi tin 1 dòng; chạm mở ra mới có nút nhận tay
+const others = s => s.feed.filter(f => (f.status === 'maybe' || f.status === 'skip') && f.reason !== 'Đã bỏ qua'
+  && (f.pickup || f.status === 'maybe' || f.price || f.code)).slice(0, 12);
+function otherRow(f) {
+  const open = openId === f.id;
+  const why = f.status === 'maybe' ? 'Chưa rõ tuyến' : f.reason;
+  return `<div class="orow">
+    <button class="orow-h" data-open="${f.id}">
+      <span class="grow"><b>${f.pickup ? `${esc(f.pickup)} → ${esc(f.dropoff)}` : esc(f.text)}</b>
+        <small>${[f.seats && f.seats + ' ghế', f.price && f.price / 1000 + 'k', why].filter(Boolean).map(esc).join(' · ')}</small></span>
+      ${ic(open ? 'up' : 'chev', 18)}</button>
+    ${open ? `<p>${esc(f.text)}</p><div class="acts">
+      <button class="btn" data-reject="${f.id}">Bỏ qua</button>
+      <button class="btn" data-edit="${f.id}" aria-label="Sửa câu trả lời">${ic('edit', 20)}</button>
+      <button class="btn acc" data-accept="${f.id}">Nhận cuốc</button></div>` : ''}
+  </div>`;
+}
+
+function feedHtml(s) {
+  const offers = s.feed.filter(f => f.status === 'pending' || f.status === 'offer').slice(0, 3);
+  const rest = others(s);
+  const on = s.st.auto && s.free > 0;
+  return (offers.length ? offers.map((f, i) => rideCard(f, s, i === 0)).join('') : `<div class="radar">
+      <div class="rings ${on ? '' : 'off'}"><i></i><b></b></div>
+      <div><h2>${s.free <= 0 ? 'Kín xe' : `Đang canh ${s.sim ? 'tin thử' : s.groups + ' nhóm Zalo'}`}</h2>
+        <p class="mut" style="margin-top:4px">${s.free <= 0 ? 'Tạm dừng bắt cuốc' : `Đã đọc ${s.stats.seen} tin · đã nhận ${s.stats.taken}`}</p></div>
+    </div>`)
+    + (rest.length ? `<section class="others card">
+      <button class="others-h" data-others="1"><span class="grow" style="text-align:left">Cuốc khác</span><span class="n num">${rest.length}</span>${ic(othersOpen ? 'up' : 'chev', 18)}</button>
+      ${othersOpen ? rest.map(otherRow).join('') : ''}</section>` : '');
+}
+
+function render(s) {
+  if (!S) {
+    localStorage.setItem('code', code); $('#login').hidden = true; $('#app').hidden = false;
+    lastToast = { id: s.feed.find(f => f.status === 'taken')?.id, until: 0 }; // không báo lại cuốc cũ khi mở lại app
+  }
+  S = s;
+  const st = s.st;
+
+  // ---- Trạng thái ----
+  $('#zdot').classList.toggle('ok', s.zaloOk || s.sim);
+  set($('#zline'), s.sim ? `Thử <small>${fmtTime(s.clock)}</small>` : s.zaloOk ? `${s.groups} nhóm Zalo` : 'Zalo chưa kết nối');
+  $('#testBtn').hidden = !s.sim;
+
+  // ---- Ghế + lệch ----
+  const tiles = seatTiles(s);
+  $('#seats').style.setProperty('--n', Math.min(tiles.length, 7));
+  set($('#seats'), tiles.join(''));
+  set($('#free'), s.free > 0 ? `<b class="num">${s.free}</b><span>trống/${st.totalSeats}</span>` : `<b style="color:var(--acc-tx)">Kín</b><span>${st.totalSeats} khách</span>`);
+  set($('#detBtn'), `<b class="num">≤${st.maxDetour}p</b><span>lệch tối đa</span>`);
+
+  // ---- Dòng cuốc ----
+  set($('#feedArea'), feedHtml(s));
+  const f = s.feed.find(f => f.status === 'pending' || f.status === 'offer');
+  const taken = s.feed.find(f => f.status === 'taken');
+  if (taken && taken.id !== lastToast?.id) lastToast = { id: taken.id, until: Date.now() + 5000,
+    text: (taken.pickup ? `Đã nhận ${taken.seats} ghế · ${esc(taken.pickup)} → ${esc(taken.dropoff)}` : `Đã chốt tin ${esc(taken.group)}`)
+      + (taken.sendAt > Date.now() ? ` · gửi Zalo ${fmtTime(taken.sendAt)}` : '') };
+  set($('#toast'), lastToast && Date.now() < lastToast.until ? `<div class="toast">${ic('check', 20)}<span>${lastToast.text}</span></div>` : '');
+  if (f || (lastToast && Date.now() < lastToast.until)) $('#dim').hidden = true; // có cuốc thì sáng màn lại
+  $('#dimSeat').textContent = s.free > 0 ? `Trống ${s.free} ghế` : 'Kín xe';
+
+  // ---- Điểm dừng kế tiếp (phụ) ----
+  const x = s.stops[0];
+  const long = x && x.type === 'dropoff' && x.seated !== null && x.seated >= LONG;
+  $('#nextbar').hidden = !x; // xe trống thì nhường chỗ cho dòng cuốc
+  set($('#nextbar'), x ? `
+    <div class="grow"><div class="t">${x.type === 'pickup' ? 'Đón' : 'Trả'} ${x.seats} · ${esc(x.name)}</div>
+      <div class="s ${long ? 'warn' : ''}">${long ? `Ưu tiên trả · đã ngồi ${x.seated}p` : `${mins(x.eta)} · đến ${fmtTime(s.clock + x.eta * 60000)}${s.stops.length > 1 ? ` · còn ${s.stops.length - 1} điểm` : ''}`}</div></div>
+    <span class="btn" data-stop="${x.rideId}">${ic('check', 18)}${x.type === 'pickup' ? 'Đã đón' : 'Đã trả'}</span>
+    <a class="btn" href="${navUrl(x)}" target="_blank" rel="noopener" aria-label="Chỉ đường">${ic('nav', 18)}</a>` : '');
+  set($('#stopList'), s.stops.map((x, i) => {
+    const long = x.type === 'dropoff' && x.seatedAtDrop !== null && x.seatedAtDrop >= LONG;
+    return `<div class="stop">
+      <time class="num">${fmtTime(s.clock + x.eta * 60000)}</time>
+      <div><div class="nm">${x.type === 'pickup' ? 'Đón' : 'Trả'} ${x.seats} · ${esc(x.name)}</div>
+        <div class="sub ${long ? 'warn' : ''}">${long ? `Ưu tiên trả · đã ngồi ${x.seated}p` : mins(x.eta) + (x.seated !== null ? ` · đã ngồi ${x.seated}p` : '')}</div>
+        <div class="acts">
+          <a class="btn" href="${navUrl(x)}" target="_blank" rel="noopener">${ic('nav', 16)}Chỉ đường</a>
+          ${x.phone ? `<a class="btn" href="tel:${esc(x.phone)}">${ic('phone', 16)}Gọi</a>` : ''}
+          ${i === 0 ? `<button class="btn" data-stop="${x.rideId}">${ic('check', 16)}${x.type === 'pickup' ? 'Đã đón' : 'Đã trả'}</button>` : ''}
+          ${x.type === 'pickup' ? `<button class="btn soft-bad" data-cancel="${x.rideId}">Huỷ</button>` : ''}
+        </div></div></div>`;
+  }).join('') || '<p class="hint" style="padding:16px 0">Chưa có khách.</p>');
+  $('#mapInfo').textContent = x ? `${x.type === 'pickup' ? 'Đón' : 'Trả'} ${x.name} · ${mins(x.eta)}` : 'Xe trống';
+
+  // ---- Tự bắt cuốc ----
+  $('#autoRow').classList.toggle('on', st.auto);
+  set($('#autoRow'), `<div class="grow"><div class="t">Tự bắt cuốc</div><div class="s">${
+    !st.auto ? 'Tắt · bác tự bấm nhận' : s.free <= 0 ? 'Kín xe · tạm dừng' : st.grace ? `Đếm ngược ${st.grace}s rồi tự chốt` : 'Chốt ngay khi có cuốc hợp'}</div></div>
+    <span class="switch"></span>`);
+  tick();
+
+  // ---- Cài đặt ----
+  $('#theme').value = document.documentElement.dataset.theme;
+  $('#dest').value = st.dest; $('#seatsTotal').value = st.totalSeats; $('#claimMode').value = st.claimMode; $('#grace').value = st.grace;
+  $('#zstatus').textContent = s.zaloOk ? `${s.zaloName || 'Zalo'} · đang canh ${s.groups} nhóm` : s.zaloStatus;
+  $('#zalo').hidden = s.zaloOk; $('#unlink').hidden = !s.zaloOk && !s.zaloName;
+  if (document.activeElement !== $('#mainPhone')) $('#mainPhone').value = s.mainPhone;
+  for (const k of ['reply', 'block', 'allow']) if (document.activeElement !== $('#' + k)) $('#' + k).value = s.cfg[k];
+  set($('#groupList'), s.groupList.length ? s.groupList.map(g => `
+    <div class="grp"><span>${esc(g.name || g.id)}</span>
+      ${[['watch', 'Canh'], ['auto', 'Tự'], ['waitMinute', 'Đợi 1p']].map(([k, l]) =>
+        `<button class="btn ${g[k] ? 'on' : ''}" data-group="${esc(g.id)}" data-gk="${k}" data-gv="${g[k] ? '' : '1'}">${l}</button>`).join('')}
+    </div>`).join('') : '<p class="hint">Kết nối Zalo để hiện danh sách nhóm.</p>');
+  $('#qr').style.display = s.qr ? 'flex' : 'none';
+  if (s.qr) $('#qr img').src = s.qr;
+  const step = s.zaloStatus.startsWith('Đã quét') ? 3 : s.qr ? 2 : 1;
+  $('#qrSteps').innerHTML = ['Hiện mã', 'Quét bằng Zalo', 'Xác nhận'].map((l, i) => `<span class="${i + 1 <= step ? 'on' : ''}">${i + 1}. ${l}</span>`).join('');
+  $('#sim').textContent = s.sim ? 'Dừng chạy thử' : 'Chạy thử từ điểm trên';
+  $('#lic').textContent = `Mã ${code} · hạn đến ${new Date(s.expires).toLocaleDateString('vi-VN')}`;
+  set($('#feed'), s.feed.slice(0, 15).map(f => `<div class="feed ${f.status}">
+    <b>${{ taken: 'Đã nhận', skip: 'Bỏ qua', offer: 'Chờ bấm', pending: 'Đang đếm ngược', maybe: 'Chưa rõ tuyến' }[f.status]}</b>
+    <span class="mut"> ${esc(f.reason || '')}</span><div class="mut">${esc(f.text)}</div></div>`).join(''));
+  drawMap(s);
+}
+
+// đếm ngược + tít mỗi giây
+let lastSec = null;
+function tick() {
+  const el = document.querySelector('.cd');
+  if (!el) { lastSec = null; return; }
+  const left = Math.max(0, +el.dataset.deadline - Date.now()), sec = Math.ceil(left / 1000);
+  el.textContent = `${sec}s`;
+  const bar = el.parentNode.querySelector('.bar');
+  if (bar) bar.style.width = `${left / (+el.dataset.total || 1) * 100}%`;
+  if (sec !== lastSec && sec > 0) beep(sec === 1 ? 1600 : 1200);
+  lastSec = sec;
+}
+setInterval(() => { tick(); if (lastToast && lastToast.until && Date.now() > lastToast.until && S) { lastToast.until = 0; render(S); } }, 100);
+
+$('#testBtn').innerHTML = ic('flask'); $('#mapBtn').innerHTML = ic('map'); $('#dimBtn').insertAdjacentHTML('afterbegin', ic('moon', 18)); $('#openPanel').innerHTML = ic('sliders');
+for (const id of ['#closePanel', '#closeStops', '#closeMap']) $(id).innerHTML = ic('x');
+$('#qrShare').insertAdjacentHTML('afterbegin', ic('share', 18));
+applyTheme(document.documentElement.dataset.theme);
+$('#theme').onchange = e => { applyTheme(e.target.value); if (S) render(S); };
+$('#enter').onclick = enter;
+$('#code').onkeydown = e => { if (e.key === 'Enter') enter(); }; // không return false: sẽ huỷ mọi phím gõ
+$('#openPanel').onclick = () => $('#panel').hidden = false;
+$('#closePanel').onclick = () => $('#panel').hidden = true;
+$('#mapBtn').onclick = () => { $('#stopsSheet').hidden = true; openMap(); };
+$('#closeMap').onclick = () => $('#mapView').hidden = true;
+$('#closeStops').onclick = () => $('#stopsSheet').hidden = true;
+for (const id of ['#stopsSheet', '#editSheet']) $(id).onclick = e => { if (e.target === $(id)) $(id).hidden = true; };
+$('#nextbar').onclick = e => { if (!e.target.closest('[data-stop], a') && S.stops.length) $('#stopsSheet').hidden = false; };
+$('#editCancel').onclick = () => $('#editSheet').hidden = true;
+$('#editSend').onclick = () => { api('accept', { id: editId, text: $('#editText').value }); $('#editSheet').hidden = true; };
+$('#testBtn').onclick = () => api('message', { text: SAMPLES[sampleIdx++ % SAMPLES.length] });
+$('#samples').innerHTML = SAMPLES.map(t => `<button class="btn" data-sample>${esc(t)}</button>`).join('');
+$('#dest').onchange = e => api('settings', { dest: e.target.value });
+$('#seatsTotal').onchange = e => api('settings', { totalSeats: +e.target.value });
+$('#claimMode').onchange = e => api('settings', { claimMode: e.target.value });
+$('#grace').onchange = e => api('settings', { grace: +e.target.value });
+$('#zalo').onclick = () => S.terms ? api('zalo') : ($('#terms').hidden = false);
+$('#termsOk').onchange = e => $('#termsGo').disabled = !e.target.checked;
+$('#termsGo').onclick = async () => { $('#terms').hidden = true; await api('terms'); api('zalo'); };
+$('#termsNo').onclick = () => $('#terms').hidden = true;
+$('#unlink').onclick = () => confirm('Gỡ liên kết Zalo này? Muốn dùng lại phải quét QR.') && api('unlink');
+for (const k of ['reply', 'block', 'allow']) $('#' + k).onchange = e => api('cfg', { [k]: e.target.value });
+$('#mainPhone').onchange = e => {
+  const p = e.target.value.replace(/\D/g, '');
+  if (p && !/^0\d{9}$/.test(p)) { speak('Số điện thoại chưa đúng'); e.target.value = S.mainPhone; return; }
+  api('settings', { mainPhone: p });
+};
+const qrLink = () => `${location.origin}/qr/${S.qrToken}`;
+$('#qrShare').onclick = () => navigator.share ? navigator.share({ title: 'Quét QR Zalo', url: qrLink() }).catch(() => {}) : $('#qrCopy').click();
+$('#qrCopy').onclick = async () => {
+  try { await navigator.clipboard.writeText(qrLink()); $('#qrCopy').textContent = 'Đã copy link'; }
+  catch { prompt('Copy link này:', qrLink()); }
+};
+$('#dimBtn').onclick = () => { $('#panel').hidden = true; $('#dim').hidden = false; };
+$('#dim').onclick = () => $('#dim').hidden = true;
+$('#sim').onclick = () => { api('sim', { on: !S.sim, from: $('#simFrom').value }); $('#panel').hidden = true; };
+$('#msg').onkeydown = e => { if (e.key === 'Enter') { api('message', { text: e.target.value }); e.target.value = ''; } };
+// Chạm phản hồi tức thì: đổi màn hình tại chỗ trước, server xác nhận sau.
+// op là phép đổi tuyệt đối (gán giá trị, không đảo), áp lên mọi trạng thái đến trong lúc chờ để khỏi nháy ngược.
+let ops = [];
+function act(action, body, op) {
+  if (op) { ops.push(op); const s = structuredClone(S); op(s); render(s); }
+  api(action, body).finally(() => { ops = ops.filter(o => o !== op); });
+}
+const setFeed = (id, patch) => s => Object.assign(s.feed.find(f => f.id === id) || {}, patch);
+document.body.addEventListener('click', e => {
+  const el = e.target.closest('button, [data-stop]'), d = el?.dataset || {};
+  if (d.free) { const n = +d.free; act('settings', { free: n }, s => { s.st.walkIns = Math.max(0, s.st.walkIns + s.free - n); s.free = n; }); }
+  if (d.cycle) { const m = [10, 15, 20, 30][([10, 15, 20, 30].indexOf(S.st.maxDetour) + 1) % 4]; act('settings', { maxDetour: m }, s => { s.st.maxDetour = m; }); }
+  if (d.auto) { const v = !S.st.auto; act('settings', { auto: v }, s => { s.st.auto = v; }); }
+  if (d.accept) act('accept', { id: d.accept }, setFeed(d.accept, { status: 'taken' }));
+  if (d.reject) act('reject', { id: d.reject }, setFeed(d.reject, { status: 'skip', reason: 'Đã bỏ qua' }));
+  if (d.stop) api('stop', { rideId: d.stop });
+  if (d.cancel) api('cancel', { rideId: d.cancel });
+  if (d.others) { othersOpen = !othersOpen; render(S); }
+  if (d.open) { openId = openId === d.open ? null : d.open; render(S); }
+  if (d.edit) {
+    const f = S.feed.find(f => f.id === d.edit);
+    editId = f.id; $('#editSrc').textContent = f.text; $('#editText').value = defaultReply(f);
+    $('#editSheet').hidden = false; $('#editText').focus();
+  }
+  if ('sample' in d) api('message', { text: el.textContent });
+  if (d.group) api('group', { id: d.group, [d.gk]: !!d.gv });
+});
+
+// GPS thật (khi không chạy thử): gửi vị trí mỗi 15 giây
+let lastGps = 0;
+navigator.geolocation?.watchPosition(p => {
+  if (!S || S.sim || Date.now() - lastGps < 15000) return;
+  lastGps = Date.now();
+  api('gps', { lat: p.coords.latitude, lng: p.coords.longitude });
+}, () => {}, { enableHighAccuracy: true });
+
+if (code) $('#code').value = code;
+</script>
+</body>
+</html>

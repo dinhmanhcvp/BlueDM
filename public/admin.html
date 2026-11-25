@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Blue DM · Quản lý</title>
+<link rel="icon" href="/icon.svg">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@500;600;700;800;900&display=swap">
+<style>
+  /* cùng nhận diện Blue DM: nền sáng, 1 màu nhấn cobalt */
+  :root { --bg:#F3F5F9; --surface:#FFFFFF; --line:rgba(17,19,24,.08); --s3:#EBEEF4; --tx:#10131A; --mut:#667085;
+    --acc:#1F5BFF; --acc-soft:rgba(31,91,255,.10); --ok-tx:#15803D; --warn-tx:#B45309; --bad:#E5484D; --bad-tx:#D12F35;
+    --shadow:0 1px 2px rgba(16,24,40,.05), 0 6px 16px rgba(16,24,40,.06); }
+  * { box-sizing:border-box; }
+  [hidden] { display:none !important; }
+  body { margin:0 auto; padding:16px; max-width:980px; background:var(--bg); color:var(--tx); font:600 16px/1.4 "Be Vietnam Pro",system-ui,sans-serif; }
+  .num, b { font-variant-numeric:tabular-nums; }
+  h1 { font-size:22px; margin:4px 0 16px; }
+  h2 { font-size:13px; color:var(--mut); text-transform:uppercase; letter-spacing:.06em; margin:24px 0 8px; }
+  .mut { color:var(--mut); font-size:14px; }
+  input { font:inherit; color:var(--tx); background:var(--s3); border:1px solid var(--line); border-radius:12px; padding:11px 12px; width:100%; }
+  .key { font:inherit; font-weight:700; color:var(--tx); background:var(--s3); border:0; border-radius:12px; padding:11px 16px; cursor:pointer; white-space:nowrap; transition:transform .08s; }
+  .key:active { transform:scale(.97); }
+  .key.primary { background:var(--acc); color:#fff; font-weight:800; }
+  .key.danger { color:var(--bad-tx); background:rgba(229,72,77,.1); }
+  .key:disabled { opacity:.4; }
+  .grid { display:grid; gap:8px; }
+  .stats { grid-template-columns:repeat(4, 1fr); }
+  .stat { background:var(--surface); box-shadow:var(--shadow); border-radius:18px; padding:14px; }
+  .stat b { display:block; font-size:26px; font-weight:900; }
+  .form { grid-template-columns:1fr 1fr 1fr; background:var(--surface); box-shadow:var(--shadow); border-radius:18px; padding:14px; }
+  .form .full { grid-column:1 / -1; }
+  .plans { display:flex; gap:6px; flex-wrap:wrap; }
+  .plans .key.sel { background:var(--acc-soft); color:var(--acc); }
+  .drv { background:var(--surface); box-shadow:var(--shadow); border-radius:18px; padding:16px; margin:10px 0; }
+  .drv.locked { opacity:.55; }
+  .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .code { font-size:22px; font-weight:900; letter-spacing:.04em; }
+  .pill { border-radius:999px; padding:3px 10px; font-size:13px; font-weight:800; }
+  .pill .x { font:inherit; border:0; background:none; color:inherit; cursor:pointer; padding:0 0 0 6px; font-size:16px; line-height:1; }
+  .p-ok { color:var(--acc); background:var(--acc-soft); }
+  .p-warn { color:var(--warn-tx); background:rgba(245,158,11,.14); }
+  .p-bad { color:var(--bad-tx); background:rgba(229,72,77,.1); }
+  .p-sky { color:var(--mut); background:var(--s3); }
+  .acts { margin-top:10px; }
+  .qrbox { margin-top:10px; padding:12px; border-radius:14px; background:var(--s3); color:var(--tx); text-align:center; }
+  .qrbox img { width:240px; max-width:100%; }
+  details { margin-top:8px; } summary { cursor:pointer; color:var(--mut); font-size:14px; }
+  table { width:100%; border-collapse:collapse; font-size:14px; margin-top:6px; }
+  td { padding:6px 4px; border-bottom:1px solid var(--line); }
+  #err { color:var(--bad-tx); min-height:20px; }
+  @media (max-width:640px) { .stats { grid-template-columns:1fr 1fr; } .form { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<h1 style="display:flex;align-items:center;gap:12px"><img src="/icon.svg" alt="" width="40" height="40" style="border-radius:10px"><span>Blue <span style="color:var(--acc)">DM</span> <span style="color:var(--mut);font-weight:600">· Quản lý</span></span></h1>
+
+<div id="login" class="row">
+  <input id="key" type="password" placeholder="Mật khẩu admin (ADMIN_KEY)" style="flex:1;min-width:200px">
+  <button class="key primary" id="loginBtn">Vào</button>
+</div>
+<p class="mut" style="margin:-8px 0 12px">Gửi tài xế: link app + <a href="/huong-dan.html" target="_blank" style="color:var(--acc);font-weight:700">trang hướng dẫn</a> (<span id="guideUrl"></span>)</p>
+<p id="err"></p>
+
+<div id="app" hidden>
+  <div class="grid stats" id="stats"></div>
+
+  <h2>Thêm tài xế / Thu tiền gia hạn</h2>
+  <div class="grid form">
+    <input id="fCode" placeholder="Mã cũ (trống = tạo mã mới)" style="text-transform:uppercase">
+    <input id="fName" placeholder="Tên tài xế">
+    <input id="fPhone" type="tel" placeholder="SĐT liên hệ">
+    <div class="full row">
+      <span class="mut">Giá 1 tháng</span>
+      <input id="price" type="number" step="10000" style="width:140px">
+      <div class="plans" id="plans"></div>
+    </div>
+    <input id="fDays" type="number" placeholder="Số ngày">
+    <input id="fAmount" type="number" step="10000" placeholder="Số tiền đã thu (đ)">
+    <input id="fNote" placeholder="Ghi chú (CK Vietcombank, tiền mặt…)">
+    <div class="full row">
+      <button class="key primary" id="saveBtn">Lưu & cộng ngày</button>
+      <button class="key" id="clearBtn">Xoá form</button>
+      <span class="mut" id="saveMsg"></span>
+    </div>
+  </div>
+
+  <h2>Tài xế <span class="mut" id="count"></span></h2>
+  <input id="search" placeholder="Tìm tên, SĐT, mã…">
+  <div id="list"></div>
+
+  <h2>Địa danh chưa nhận ra <span class="mut" id="unCount"></span></h2>
+  <p class="mut">Tin trông như cuốc nhưng app không đọc ra điểm đón/trả. Thêm địa danh là lần sau app hiểu ngay, không cần sửa code.
+    Lấy toạ độ: mở Google Maps, nhấn giữ (điện thoại) hoặc chuột phải (máy tính) vào địa điểm, chép dòng số.</p>
+  <div class="grid form">
+    <input id="pName" placeholder="Tên địa danh (vd. Lương Sơn)">
+    <input id="pLatLng" placeholder="Toạ độ (vd. 20.8820, 105.5180)">
+    <input id="pAliases" placeholder="Tên gọi khác, cách nhau dấu phẩy (vd. ls, chợ lương sơn)">
+    <div class="full row">
+      <button class="key primary" id="addPlace">Thêm địa danh</button>
+      <button class="key" id="loadPlaces">Tải lại danh sách</button>
+      <span class="mut" id="placeMsg"></span>
+    </div>
+  </div>
+  <div id="places"></div>
+  <div id="unparsed"></div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+const vnd = n => (n || 0).toLocaleString('vi-VN') + 'đ';
+const day = iso => new Date(iso).toLocaleDateString('vi-VN');
+let key = sessionStorage.getItem('adminKey') || '', V = null, timer;
+const PLANS = [[1, 30], [3, 90], [6, 180], [12, 365]];
+const price = () => +$('#price').value || 0;
+try { $('#price').value = localStorage.getItem('price') || 300000; } catch { $('#price').value = 300000; }
+
+async function call(action, body = {}) {
+  const r = await fetch('/admin/' + action, { method: 'POST', body: JSON.stringify({ key, ...body }) });
+  const data = await r.json().catch(() => ({ error: 'Lỗi máy chủ' }));
+  if (!r.ok) { $('#err').textContent = data.error; if (r.status === 403) { $('#app').hidden = true; $('#login').hidden = false; } return null; }
+  $('#err').textContent = '';
+  $('#login').hidden = true; $('#app').hidden = false;
+  sessionStorage.setItem('adminKey', key);
+  render(V = data);
+  if (!placesLoaded) { placesLoaded = true; places('unparsed'); }
+  return data;
+}
+
+// Địa danh: tin chưa đọc được + địa danh admin đã thêm
+let placesLoaded = false;
+async function places(action, body = {}) {
+  const r = await fetch('/admin/' + action, { method: 'POST', body: JSON.stringify({ key, ...body }) });
+  const d = await r.json().catch(() => ({ error: 'Lỗi máy chủ' }));
+  if (!r.ok) { $('#placeMsg').textContent = d.error; return false; }
+  $('#placeMsg').textContent = action === 'addPlace' ? `✓ Đã thêm ${body.name}` : '';
+  $('#unCount').textContent = `(${d.unparsed.length})`;
+  $('#places').innerHTML = d.places.length ? `<div class="row" style="margin:10px 0">${d.places.map(p => `<span class="pill p-ok">${esc(p.name)}
+    <button class="x" data-rmplace="${esc(p.name)}" aria-label="Xoá ${esc(p.name)}">×</button></span>`).join('')}</div>` : '';
+  $('#unparsed').innerHTML = d.unparsed.map(u => `<div class="drv">
+    <div class="mut" style="font-size:13px">${esc(u.group || 'Tin thử')} · ${new Date(u.at).toLocaleString('vi-VN')}${u.test ? ' · tin thử' : ''}</div>
+    <div style="margin-top:4px">${esc(u.text)}</div></div>`).join('') || '<p class="mut">Chưa có tin nào.</p>';
+  return true;
+}
+$('#guideUrl').textContent = location.origin + '/huong-dan.html';
+$('#loadPlaces').onclick = () => places('unparsed');
+$('#addPlace').onclick = async () => {
+  const m = $('#pLatLng').value.match(/(-?\d+(?:\.\d+)?)\s*[,;\s]\s*(-?\d+(?:\.\d+)?)/);
+  if (!m) return $('#placeMsg').textContent = 'Toạ độ chưa đúng. Dán dạng: 20.8820, 105.5180';
+  const body = { name: $('#pName').value.trim(), lat: +m[1], lng: +m[2], aliases: $('#pAliases').value };
+  if (await places('addPlace', body)) for (const id of ['pName', 'pLatLng', 'pAliases']) $('#' + id).value = '';
+};
+
+function render(v) {
+  const s = v.summary;
+  $('#stats').innerHTML = [
+    ['Đang dùng', s.active], ['Sắp hết hạn (≤3 ngày)', s.expiring], ['Thu tháng này', vnd(s.monthRevenue)], ['Tổng đã thu', vnd(s.totalRevenue)],
+  ].map(([l, n]) => `<div class="stat"><span class="mut">${l}</span><b>${n}</b></div>`).join('');
+
+  const q = $('#search').value.trim().toLowerCase();
+  const list = v.drivers.filter(d => !q || [d.code, d.name, d.phone, d.mainPhone].join(' ').toLowerCase().includes(q));
+  $('#count').textContent = `(${list.length})`;
+  const open = new Set([...document.querySelectorAll('details[open]')].map(x => x.dataset.code));
+  $('#list').innerHTML = list.map(d => {
+    const exp = d.locked ? ['p-bad', 'Đã khoá'] : d.daysLeft <= 0 ? ['p-bad', `Hết hạn ${day(d.expires)}`]
+      : d.daysLeft <= 3 ? ['p-warn', `Còn ${d.daysLeft} ngày`] : ['p-ok', `Còn ${d.daysLeft} ngày · ${day(d.expires)}`];
+    const zalo = d.zaloOk ? ['p-ok', `Zalo · ${d.groups} nhóm`] : d.qr ? ['p-warn', 'Chờ quét QR'] : ['p-sky', d.zaloStatus];
+    return `
+    <div class="drv ${d.locked ? 'locked' : ''}">
+      <div class="row">
+        <span class="code">${esc(d.code)}</span>
+        <span>${esc(d.name) || '<span class="mut">chưa có tên</span>'}</span>
+        ${d.phone ? `<a class="mut" href="tel:${esc(d.phone)}">${esc(d.phone)}</a>` : ''}
+        <span class="pill ${exp[0]}">${exp[1]}</span>
+        <span class="pill ${zalo[0]}">${esc(zalo[1])}</span>
+        <span class="pill ${d.online ? 'p-ok' : 'p-sky'}">${d.online ? 'Đang mở app' : 'Không mở app'}</span>
+      </div>
+      <div class="mut" style="margin-top:4px">
+        Số chính: ${esc(d.mainPhone) || '—'} · ${d.terms ? 'Đã đồng ý điều khoản' : 'Chưa đồng ý điều khoản'} · Đã nhận ${d.taken} cuốc · Đã thu ${vnd(d.paid)}${d.lastPay ? ` (lần cuối ${day(d.lastPay.at)})` : ''}
+      </div>
+      <div class="row acts">
+        <button class="key primary" data-pay="${esc(d.code)}">Thu tiền</button>
+        ${d.zaloOk ? `<button class="key danger" data-act="logout" data-code="${esc(d.code)}">Đăng xuất Zalo</button>`
+          : `<button class="key" data-act="zalo" data-code="${esc(d.code)}" ${d.terms ? '' : 'disabled title="Tài xế cần bấm đồng ý điều khoản trong app trước"'}>Kết nối Zalo hộ</button>`}
+        <button class="key" data-remind="${esc(d.code)}">Copy tin nhắc</button>
+        <button class="key ${d.locked ? '' : 'danger'}" data-act="lock" data-code="${esc(d.code)}" data-locked="${d.locked ? '' : '1'}">${d.locked ? 'Mở khoá' : 'Khoá'}</button>
+      </div>
+      ${d.qr ? `<div class="qrbox"><b>Tài xế mở Zalo → quét mã này</b><br><img src="${d.qr}" alt="QR Zalo của ${esc(d.code)}"></div>` : ''}
+      ${d.payments.length ? `<details data-code="${esc(d.code)}" ${open.has(d.code) ? 'open' : ''}><summary>Lịch sử thu tiền</summary><table>${
+        d.payments.map(p => `<tr><td>${day(p.at)}</td><td class="num">${vnd(p.amount)}</td><td>+${p.days} ngày</td><td class="mut">${esc(p.note)}</td></tr>`).join('')}</table></details>` : ''}
+    </div>`;
+  }).join('') || '<p class="mut">Chưa có tài xế.</p>';
+  clearTimeout(timer);
+  timer = setTimeout(() => call('list'), v.drivers.some(d => d.qr) ? 2000 : 10000);
+}
+
+function setPlan(months, days) {
+  $('#fDays').value = days; $('#fAmount').value = months * price();
+  document.querySelectorAll('#plans .key').forEach(b => b.classList.toggle('sel', +b.dataset.days === days));
+}
+$('#plans').innerHTML = PLANS.map(([m, d]) => `<button class="key" data-months="${m}" data-days="${d}">${m} tháng</button>`).join('');
+$('#plans').onclick = e => { const b = e.target.closest('button'); if (b) setPlan(+b.dataset.months, +b.dataset.days); };
+$('#price').onchange = () => { try { localStorage.setItem('price', price()); } catch {} };
+
+$('#loginBtn').onclick = () => { key = $('#key').value; call('list'); };
+$('#key').onkeydown = e => { if (e.key === 'Enter') $('#loginBtn').click(); }; // không return false: sẽ huỷ mọi phím gõ
+$('#search').oninput = () => V && render(V);
+$('#clearBtn').onclick = () => { for (const id of ['fCode', 'fName', 'fPhone', 'fDays', 'fAmount', 'fNote']) $('#' + id).value = ''; document.querySelectorAll('#plans .sel').forEach(b => b.classList.remove('sel')); };
+$('#saveBtn').onclick = async () => {
+  const body = { code: $('#fCode').value.trim(), name: $('#fName').value.trim(), phone: $('#fPhone').value.trim(),
+    days: +$('#fDays').value || 0, amount: +$('#fAmount').value || 0, note: $('#fNote').value.trim() };
+  if (!body.code && !body.name) return $('#err').textContent = 'Nhập tên tài xế cho mã mới';
+  const v = await call('save', body);
+  if (!v) return;
+  const d = v.drivers.find(x => x.code === v.saved);
+  $('#saveMsg').textContent = `✓ Mã ${d.code} · hạn đến ${day(d.expires)} · gửi mã này cho tài xế`;
+  $('#clearBtn').click();
+};
+document.body.addEventListener('click', async e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.rmplace && confirm(`Xoá địa danh "${b.dataset.rmplace}"? App sẽ không đọc ra nơi này nữa.`)) places('removePlace', { name: b.dataset.rmplace });
+  if (b.dataset.pay) {
+    const d = V.drivers.find(x => x.code === b.dataset.pay);
+    $('#fCode').value = d.code; $('#fName').value = d.name || ''; $('#fPhone').value = d.phone || '';
+    setPlan(1, 30); scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  if (b.dataset.act) {
+    if (b.dataset.act === 'logout' && !confirm(`Đăng xuất Zalo của ${b.dataset.code}? Tài xế sẽ phải quét QR lại.`)) return;
+    if (b.dataset.act === 'lock' && b.dataset.locked && !confirm(`Khoá mã ${b.dataset.code}? Tài xế sẽ không vào được app và Zalo bị ngắt.`)) return;
+    call(b.dataset.act, { code: b.dataset.code, locked: !!b.dataset.locked });
+  }
+  if (b.dataset.remind) {
+    const d = V.drivers.find(x => x.code === b.dataset.remind);
+    const txt = d.daysLeft > 0
+      ? `Blue DM: mã ${d.code} của bác còn ${d.daysLeft} ngày (hết hạn ${day(d.expires)}). Gia hạn ${vnd(price())}/tháng, bác chuyển khoản rồi nhắn em để cộng ngày nhé.`
+      : `Blue DM: mã ${d.code} của bác đã hết hạn ngày ${day(d.expires)}. Gia hạn ${vnd(price())}/tháng, bác chuyển khoản rồi nhắn em để mở lại nhé.`;
+    try { await navigator.clipboard.writeText(txt); b.textContent = '✓ Đã copy'; } catch { prompt('Copy tin này:', txt); }
+  }
+});
+
+if (key) call('list');
+</script>
+</body>
+</html>

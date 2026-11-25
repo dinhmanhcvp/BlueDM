@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Quét QR Zalo · Blue DM</title>
+<link rel="icon" href="/icon.svg">
+<style>
+  body { margin:0; min-height:100dvh; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; padding:16px; box-sizing:border-box;
+    background:#F3F5F9; color:#10131A; font:600 18px/1.4 system-ui,sans-serif; text-align:center; }
+  img { width:min(420px, 90vw); background:#fff; padding:12px; border-radius:18px; box-shadow:0 6px 16px rgba(16,24,40,.08); }
+  .mut { color:#667085; font-size:15px; max-width:420px; }
+  .ok { color:#1F5BFF; font-size:24px; font-weight:800; }
+</style>
+</head>
+<body>
+<img src="/icon.svg" alt="Blue DM" width="56" height="56" style="border-radius:13px;width:56px;padding:0;background:none;box-shadow:none">
+<b>Mở Zalo trên điện thoại tài xế → Quét mã QR</b>
+<img id="qr" alt="Mã QR đăng nhập Zalo" hidden>
+<div id="st" class="mut">Đang lấy mã…</div>
+<p class="mut">Mã tự làm mới khi hết hạn. Đừng gửi link này cho người lạ.</p>
+<script>
+const token = location.pathname.split('/').pop();
+async function poll() {
+  try {
+    const r = await fetch('/qr-data/' + token), d = await r.json();
+    if (!r.ok) { document.getElementById('st').textContent = 'Link đã hết hạn. Bấm lại "Gửi mã QR" trong app.'; return; }
+    const img = document.getElementById('qr');
+    img.hidden = !d.qr;
+    if (d.qr && img.src !== d.qr) img.src = d.qr;
+    document.getElementById('st').className = d.ok ? 'ok' : 'mut';
+    document.getElementById('st').textContent = d.ok ? '✓ Đã kết nối Zalo. Có thể đóng trang này.' : d.status;
+    if (d.ok) return;
+  } catch {}
+  setTimeout(poll, 3000);
+}
+poll();
+</script>
+</body>
+</html>

@@ -1,0 +1,3 @@
+# luôn xuống dòng kiểu Linux: setup.sh chạy được trên VPS kể cả khi chép từ máy Windows
+* text=auto eol=lf
+*.png binary

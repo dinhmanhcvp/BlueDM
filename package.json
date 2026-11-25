@@ -1,0 +1,12 @@
+{
+  "type": "module",
+  "dependencies": {
+    "zca-js": "^2.2.0"
+  },
+  "name": "blue-dm",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test && node zalo.js --selftest"
+  }
+}
