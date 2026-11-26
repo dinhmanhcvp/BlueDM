@@ -240,7 +240,7 @@
   <header class="topbar">
     <img class="logo" src="/icon.svg" alt="Blue DM">
     <div class="status grow"><span class="dot" id="zdot"></span><span id="zline"></span></div>
-    <button class="icon-btn" id="testBtn" hidden aria-label="Giả lập 1 tin Zalo"></button>
+    <button class="icon-btn" id="testBtn" hidden aria-label="Nhắn tin thử"></button>
     <button class="icon-btn" id="openPanel" aria-label="Cài đặt"></button>
   </header>
 
@@ -268,6 +268,17 @@
     <textarea id="editText" maxlength="300" aria-label="Câu trả lời gửi vào nhóm"></textarea>
     <button class="btn acc" id="editSend">Gửi &amp; nhận cuốc</button>
     <button class="btn line" id="editCancel">Thôi</button>
+  </div>
+</div>
+
+<div id="testSheet" class="sheet" hidden>
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <div class="grab"></div>
+    <h3 style="font-size:20px">Nhắn thử như tin nhóm Zalo</h3>
+    <textarea id="msg" maxlength="1000" placeholder="VD: Cần 1 ghế Phúc Yên đi Mỹ Đình 150k" aria-label="Tin nhắn thử"></textarea>
+    <button class="btn acc" id="msgSend">Gửi tin thử</button>
+    <span class="label">Hoặc chạm tin mẫu</span>
+    <div class="samples" id="samples"></div>
   </div>
 </div>
 
@@ -326,8 +337,7 @@
     <select id="simFrom" aria-label="Điểm xuất phát"></select>
     <button class="btn" id="sim"></button>
     <button class="btn acc" id="demo">Demo tự bắt cuốc (tin Zalo giả)</button>
-    <div class="samples" id="samples"></div>
-    <input id="msg" placeholder="Gõ tin nhóm rồi Enter…">
+    <p class="hint">Đang chạy thử: chạm nút bình thí nghiệm trên cùng để nhắn tin thử.</p>
   </div>
   <div class="group card">
     <span class="label">Tin gần đây</span>
@@ -406,7 +416,6 @@ const SAMPLES = [
   '1k chợ Lương Sơn đi Bv Nam Học 300k Ct. code 88',
   '12h30 1 khách Bình Xuyên đi Mỹ Đình 200k code 12',
 ];
-let sampleIdx = 0;
 
 // server trả trạng thái mới ngay trong phản hồi → chạm là màn hình đổi, không chờ lần đẩy kế tiếp
 const api = (a, b = {}) => fetch(`/api/${a}?code=${encodeURIComponent(code)}`, { method: 'POST', body: JSON.stringify(b) })
@@ -789,11 +798,12 @@ $('#closePanel').onclick = () => $('#panel').hidden = true;
 $('#mapBtn').onclick = () => { $('#stopsSheet').hidden = true; openMap(); };
 $('#closeMap').onclick = () => $('#mapView').hidden = true;
 $('#closeStops').onclick = () => $('#stopsSheet').hidden = true;
-for (const id of ['#stopsSheet', '#editSheet']) $(id).onclick = e => { if (e.target === $(id)) $(id).hidden = true; };
+for (const id of ['#stopsSheet', '#editSheet', '#testSheet']) $(id).onclick = e => { if (e.target === $(id)) $(id).hidden = true; };
 $('#nextbar').onclick = e => { if (!e.target.closest('[data-stop], a') && S.stops.length) $('#stopsSheet').hidden = false; };
 $('#editCancel').onclick = () => $('#editSheet').hidden = true;
 $('#editSend').onclick = () => { api('accept', { id: editId, text: $('#editText').value }); $('#editSheet').hidden = true; };
-$('#testBtn').onclick = () => api('message', { text: SAMPLES[sampleIdx++ % SAMPLES.length] });
+$('#testBtn').onclick = () => { $('#testSheet').hidden = false; $('#msg').focus(); };
+$('#msgSend').onclick = () => { const t = $('#msg').value.trim(); if (t) api('message', { text: t }); $('#msg').value = ''; $('#testSheet').hidden = true; };
 $('#samples').innerHTML = SAMPLES.map(t => `<button class="btn" data-sample>${esc(t)}</button>`).join('');
 $('#dest').onchange = e => api('settings', { dest: e.target.value });
 $('#seatsTotal').onchange = e => api('settings', { totalSeats: +e.target.value });
@@ -820,7 +830,6 @@ $('#dimBtn').onclick = () => { $('#panel').hidden = true; $('#dim').hidden = fal
 $('#dim').onclick = () => $('#dim').hidden = true;
 $('#demo').onclick = () => { api('sim', { on: true, demo: true }); $('#panel').hidden = true; };
 $('#sim').onclick = () => { api('sim', { on: !S.sim, from: $('#simFrom').value }); $('#panel').hidden = true; };
-$('#msg').onkeydown = e => { if (e.key === 'Enter') { api('message', { text: e.target.value }); e.target.value = ''; } };
 // Chạm phản hồi tức thì: đổi màn hình tại chỗ trước, server xác nhận sau.
 // op là phép đổi tuyệt đối (gán giá trị, không đảo), áp lên mọi trạng thái đến trong lúc chờ để khỏi nháy ngược.
 let ops = [];
@@ -845,7 +854,7 @@ document.body.addEventListener('click', e => {
     editId = f.id; $('#editSrc').textContent = f.text; $('#editText').value = defaultReply(f);
     $('#editSheet').hidden = false; $('#editText').focus();
   }
-  if ('sample' in d) api('message', { text: el.textContent });
+  if ('sample' in d) { api('message', { text: el.textContent }); $('#testSheet').hidden = true; }
   if (d.group) api('group', { id: d.group, [d.gk]: !!d.gv });
 });
 

@@ -8,7 +8,7 @@
 npm install && npm start
 ```
 
-Mở http://localhost:3000, nhập mã `DEMO`, mở "Chế độ mô phỏng" → Bắt đầu chạy → bấm các tin mẫu.
+Mở http://localhost:3000, nhập mã `DEMO`, mở Cài đặt → "Demo tự bắt cuốc" (tin Zalo giả tự đến) hoặc "Chạy thử từ điểm trên". Khi đang chạy thử, chạm nút bình thí nghiệm trên cùng để gõ tin thử như tin nhóm Zalo hoặc chạm tin mẫu.
 
 `npm test` chạy bộ kiểm thử engine.
 
