@@ -207,7 +207,7 @@ function claim(d, item) {
   if (!ev.ok) { Object.assign(item, { status: 'skip', reason: ev.reason }); d.stats.skipped++; return; }
   item.status = 'taken';
   d.stats.taken++;
-  d.st.rides.push({ id: item.id, pickup: item.ride.pickup, dropoff: item.ride.dropoff, seats: item.seats, phone: item.phone, status: 'assigned' });
+  d.st.rides.push({ id: item.id, pickup: item.ride.pickup, dropoff: item.ride.dropoff, seats: item.seats, phone: item.phone, price: item.price, status: 'assigned' });
   const left = freeSeats(d.st);
   say(d, `Đã ${d.st.auto ? 'tự ' : ''}nhận ${item.seats} ghế ${item.pickup} đi ${item.dropoff}${ev.detour !== undefined ? `, lệch ${ev.detour} phút` : ''}. ${left ? `Trống ${left} ghế.` : 'Xe đã kín chỗ.'}`);
   sendClaim(d, item);
@@ -240,7 +240,14 @@ function finishStop(d, rideId) {
   const r = d.st.rides.find(r => r.id === rideId);
   if (!r) return;
   if (r.status === 'assigned') { r.status = 'onboard'; r.boardedAt = now(d); say(d, `Đã đón khách ${r.pickup.name}`); }
-  else { d.st.rides = d.st.rides.filter(x => x !== r); say(d, `Đã trả khách ${r.dropoff.name}`); }
+  else {
+    d.st.rides = d.st.rides.filter(x => x !== r);
+    // thu nhập theo ngày giờ Việt Nam; cuốc không ghi giá thì không cộng
+    const day = new Date(now(d) + 7 * 3600e3).toISOString().slice(0, 10);
+    if (d.stats.day !== day) Object.assign(d.stats, { day, earned: 0, done: 0 });
+    d.stats.done++; d.stats.earned += r.price || 0;
+    say(d, `Đã trả khách ${r.dropoff.name}${r.price ? `, thu ${Math.round(r.price / 1000)} nghìn` : ''}. Hôm nay ${Math.round(d.stats.earned / 1000)} nghìn`);
+  }
 }
 
 function startZalo(d) {
@@ -278,7 +285,7 @@ for (const f of fs.readdirSync(DATA)) {
 
 const actions = {
   settings(d, b) {
-    for (const k of ['auto', 'maxDetour', 'totalSeats', 'claimMode', 'grace']) if (k in b) d.st[k] = b[k];
+    for (const k of ['auto', 'maxDetour', 'totalSeats', 'claimMode', 'grace', 'minPrice']) if (k in b) d.st[k] = b[k];
     if (b.dest) d.st.dest = findLandmark(b.dest) || d.st.dest;
     // tài xế chạm số ghế còn trống (khách vẫy dọc đường chiếm phần còn lại)
     if (Number.isInteger(b.free)) d.st.walkIns = Math.max(0, d.st.walkIns + freeSeats(d.st) - b.free);
@@ -327,7 +334,7 @@ const actions = {
     else { Object.assign(d.st, { rides: [], walkIns: 0 }); loadSaved(d); } // tắt chạy thử: bỏ khách giả, trả lại lộ trình thật
     if (d.sim && b.demo) {
       // demo: xe Vĩnh Yên → Hà Nội, tự bắt cuốc, tin nhóm Zalo giả tự đến theo kịch bản (cài đặt thật được trả lại khi dừng)
-      Object.assign(d.st, { pos: findLandmark('Vĩnh Yên'), dest: findLandmark('Hà Nội'), totalSeats: 4, maxDetour: 20, auto: true, grace: 5 });
+      Object.assign(d.st, { pos: findLandmark('Vĩnh Yên'), dest: findLandmark('Hà Nội'), totalSeats: 4, maxDetour: 20, auto: true, grace: 5, minPrice: 0 });
       d.feed = []; d.stats = { seen: 0, skipped: 0, taken: 0 };
       d.demoTimers = DEMO_SCRIPT.map(([sec, group, text]) => setTimeout(() => {
         if (d.sim) ingest(d, text, { demo: true, group }).catch(console.error);

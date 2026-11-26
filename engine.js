@@ -186,9 +186,23 @@ export function planRoute(pos, dest, rides, now, opt = {}) {
 
 export const freeSeats = st => st.totalSeats - st.walkIns - st.rides.reduce((n, r) => n + r.seats, 0);
 
+// Giờ hẹn "12h30" → mốc thời gian (giờ Việt Nam) gần nhất: đã qua hơn 2 tiếng thì hiểu là ngày mai
+export function pickupAt(time, now) {
+  const m = /^(\d{1,2})h(\d{2})?$/.exec(time || '');
+  if (!m || +m[1] > 23 || +(m[2] || 0) > 59) return undefined;
+  const vn = new Date(now + 7 * 3600e3);
+  let t = Date.UTC(vn.getUTCFullYear(), vn.getUTCMonth(), vn.getUTCDate(), +m[1], +(m[2] || 0)) - 7 * 3600e3;
+  if (t < now - 2 * 3600e3) t += 864e5;
+  return t;
+}
+const EARLY = 30, LATE = 15; // phút: xe tới sớm hơn giờ hẹn quá 30p (phải chờ) hoặc trễ quá 15p thì bỏ
+const fmtK = v => `${Math.round(v / 1000)}k`;
+
 // ---------- Đánh giá cuốc mới ----------
 export function evaluateRide(st, ride, now) {
   if (freeSeats(st) < ride.seats) return { ok: false, reason: freeSeats(st) ? `Chỉ trống ${freeSeats(st)} ghế` : 'Kín xe' };
+  // tin không ghi giá thì không lọc (đa số tin không ghi)
+  if (st.minPrice && ride.price && ride.price < st.minPrice) return { ok: false, reason: `Giá ${fmtK(ride.price)} (dưới ${fmtK(st.minPrice)})` };
   const { pos, dest } = st;
   const pp = progress(ride.pickup, pos, dest), pd = progress(ride.dropoff, pos, dest);
   const dPick = km(pos, ride.pickup);
@@ -200,8 +214,14 @@ export function evaluateRide(st, ride, now) {
   if (pd > progress(dest, pos, dest) + 15) return { ok: false, reason: 'Trả quá xa điểm cuối' };
 
   const before = planRoute(pos, dest, st.rides, now).endTime;
-  const after = planRoute(pos, dest, [...st.rides, { ...ride, id: '_new', status: 'assigned' }], now).endTime;
-  const detour = Math.round(after - before);
+  const plan = planRoute(pos, dest, [...st.rides, { ...ride, id: '_new', status: 'assigned' }], now);
+  const detour = Math.round(plan.endTime - before);
   if (detour > st.maxDetour) return { ok: false, reason: `Lệch +${detour}p (quá ${st.maxDetour}p)`, detour };
+  const at = pickupAt(ride.time, now);
+  if (at) {
+    const late = Math.round(plan.arrival.p_new - (at - now) / 60000);
+    if (late > LATE) return { ok: false, reason: `Hẹn ${ride.time}, tới trễ ${late}p`, detour };
+    if (late < -EARLY) return { ok: false, reason: `Hẹn ${ride.time}, tới sớm ${-late}p`, detour };
+  }
   return { ok: true, detour };
 }

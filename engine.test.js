@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseRide, evaluateRide, planRoute, hasKeyword, addLandmark, LANDMARKS, findLandmark as L } from './engine.js';
+import { parseRide, evaluateRide, planRoute, pickupAt, hasKeyword, addLandmark, LANDMARKS, findLandmark as L } from './engine.js';
 
 const NOON = new Date('2026-11-13T12:00:00+07:00').getTime();
 
@@ -89,4 +89,18 @@ test('đón trước khi trả, 7 khách vẫn nhanh', () => {
     const i = plan.stops.findIndex(s => s.ride === r && s.type === 'pickup');
     assert.ok(i >= 0 && i < plan.stops.findIndex(s => s.ride === r && s.type === 'dropoff'));
   }
+});
+
+test('giờ hẹn đón và giá tối thiểu', () => {
+  assert.equal(pickupAt('12h30', NOON), NOON + 30 * 60000);
+  assert.equal(pickupAt('9h', NOON), NOON + 21 * 3600e3); // đã qua hơn 2 tiếng → sáng mai
+  assert.equal(pickupAt('Đi ngay', NOON), undefined);
+  assert.equal(pickupAt('25h', NOON), undefined);
+  const r = t => ({ ...ride('Phúc Yên', 'Cầu Giấy'), time: t });
+  assert.equal(evaluateRide(driver(), r('12h15'), NOON).ok, true);
+  assert.match(evaluateRide(driver(), r('14h'), NOON).reason, /tới sớm/);
+  assert.match(evaluateRide(driver(), r('11h'), NOON).reason, /tới trễ/);
+  const cheap = { ...ride('Phúc Yên', 'Cầu Giấy'), price: 80000 };
+  assert.match(evaluateRide(driver({ minPrice: 150000 }), cheap, NOON).reason, /Giá 80k \(dưới 150k\)/);
+  assert.equal(evaluateRide(driver({ minPrice: 150000 }), ride('Phúc Yên', 'Cầu Giấy'), NOON).ok, true); // không ghi giá: không lọc
 });

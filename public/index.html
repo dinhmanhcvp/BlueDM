@@ -310,6 +310,12 @@
       <option value="3">Đếm ngược 3s · kịp bấm huỷ</option>
       <option value="5">Đếm ngược 5s</option>
     </select>
+    <select id="minPrice" aria-label="Giá tối thiểu">
+      <option value="0">Mọi giá · tin không ghi giá luôn được xét</option>
+      <option value="100000">Chỉ nhận từ 100k</option>
+      <option value="150000">Chỉ nhận từ 150k</option>
+      <option value="200000">Chỉ nhận từ 200k</option>
+    </select>
     <select id="claimMode" aria-label="Cách chốt trên Zalo">
       <option value="reply">Chốt: trả lời trích dẫn trong nhóm</option>
       <option value="inbox">Chốt: thả tim + nhắn riêng người đăng</option>
@@ -678,7 +684,7 @@ function feedHtml(s) {
   return (offers.length ? offers.map((f, i) => rideCard(f, s, i === 0)).join('') : `<div class="radar">
       <div class="rings ${on ? '' : 'off'}"><i></i><b></b></div>
       <div><h2>${s.free <= 0 ? 'Kín xe' : `Đang canh ${s.sim ? 'tin thử' : s.groups + ' nhóm Zalo'}`}</h2>
-        <p class="mut" style="margin-top:4px">${s.free <= 0 ? 'Tạm dừng bắt cuốc' : `Đã đọc ${s.stats.seen} tin · đã nhận ${s.stats.taken}`}</p></div>
+        <p class="mut" style="margin-top:4px">${s.free <= 0 ? 'Tạm dừng bắt cuốc' : `Đã đọc ${s.stats.seen} tin · đã nhận ${s.stats.taken}${s.stats.done && s.stats.day === new Date(s.clock + 7 * 3600e3).toISOString().slice(0, 10) ? ` · hôm nay ${Math.round(s.stats.earned / 1000)}k` : ''}`}</p></div>
     </div>`)
     + (rest.length ? `<section class="others card">
       <button class="others-h" data-others="1"><span class="grow" style="text-align:left">Cuốc khác</span><span class="n num">${rest.length}</span>${ic(othersOpen ? 'up' : 'chev', 18)}</button>
@@ -749,7 +755,7 @@ function render(s) {
 
   // ---- Cài đặt ----
   $('#theme').value = document.documentElement.dataset.theme;
-  $('#dest').value = st.dest; $('#seatsTotal').value = st.totalSeats; $('#claimMode').value = st.claimMode; $('#grace').value = st.grace;
+  $('#dest').value = st.dest; $('#seatsTotal').value = st.totalSeats; $('#claimMode').value = st.claimMode; $('#grace').value = st.grace; $('#minPrice').value = st.minPrice || 0;
   $('#zstatus').textContent = s.zaloOk ? `${s.zaloName || 'Zalo'} · đang canh ${s.groups} nhóm` : s.zaloStatus;
   $('#zalo').hidden = s.zaloOk; $('#unlink').hidden = !s.zaloOk && !s.zaloName;
   if (document.activeElement !== $('#mainPhone')) $('#mainPhone').value = s.mainPhone;
@@ -809,6 +815,7 @@ $('#dest').onchange = e => api('settings', { dest: e.target.value });
 $('#seatsTotal').onchange = e => api('settings', { totalSeats: +e.target.value });
 $('#claimMode').onchange = e => api('settings', { claimMode: e.target.value });
 $('#grace').onchange = e => api('settings', { grace: +e.target.value });
+$('#minPrice').onchange = e => api('settings', { minPrice: +e.target.value });
 $('#zalo').onclick = () => S.terms ? api('zalo') : ($('#terms').hidden = false);
 $('#termsOk').onchange = e => $('#termsGo').disabled = !e.target.checked;
 $('#termsGo').onclick = async () => { $('#terms').hidden = true; await api('terms'); api('zalo'); };
