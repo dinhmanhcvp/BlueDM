@@ -2,7 +2,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { parseRide, evaluateRide, planRoute, freeSeats, findLandmark, LANDMARKS, minutes, km, hasKeyword, setTravelTime, addLandmark } from './engine.js';
+import { parseRide, evaluateRide, planRoute, freeSeats, findLandmark, LANDMARKS, minutes, km, hasKeyword, setTravelTime, addLandmark, compareKeyword } from './engine.js';
 import { connectZalo } from './zalo.js';
 import * as google from './google.js';
 
@@ -525,6 +525,15 @@ http.createServer(async (req, res) => {
     req.url = '/qr.html'; url.pathname = '/qr.html';
   }
   if (url.pathname === '/config') return json(res, 200, { mapsKey: process.env.GOOGLE_MAPS_BROWSER_KEY || '' });
+  // trang so sánh với app bắt theo từ khoá: chỉ tính toán, không đụng trạng thái tài xế nào
+  if (url.pathname === '/compare' && req.method === 'POST') {
+    const b = await body(req), pos = findLandmark(b.from), dest = findLandmark(b.dest);
+    if (!pos || !dest) return json(res, 400, { error: 'Chọn điểm xuất phát và điểm cuối' });
+    const lines = String(b.text || '').split('\n').map(s => s.trim()).filter(Boolean).slice(0, 300);
+    const keywords = String(b.keywords || '').split(',').map(s => s.trim()).filter(Boolean);
+    const num = (v, lo, hi, def) => Number.isFinite(+v) ? Math.min(hi, Math.max(lo, +v)) : def;
+    return json(res, 200, compareKeyword(lines, { pos, dest, keywords, totalSeats: num(b.seats, 1, 16, 4), maxDetour: num(b.maxDetour, 0, 120, 20), minPrice: num(b.minPrice, 0, 1e7, 0) }, Date.now()));
+  }
   if (url.pathname === '/landmarks') return json(res, 200, LANDMARKS.map(l => l.name));
   if (url.pathname.startsWith('/api/') && req.method === 'POST') {
     const fn = actions[url.pathname.slice(5)];

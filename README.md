@@ -12,6 +12,8 @@ Mở http://localhost:3000, nhập mã `DEMO`, mở Cài đặt → "Demo tự b
 
 `npm test` chạy bộ kiểm thử engine.
 
+**Trang so sánh** `/so-sanh.html`: dán một loạt tin nhóm thật, chọn vị trí xe và từ khoá. Trang đếm số cuốc một app bắt theo từ khoá sẽ nhận nhầm (ngược chiều, lệch quá, tin xe chào khách, chiếm ghế làm lỡ cuốc thật) so với Blue DM, kèm thời gian xét mỗi tin. Không cần mã, không đụng dữ liệu tài xế.
+
 ## Cách hoạt động
 
 | File | Việc |

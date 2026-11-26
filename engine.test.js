@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseRide, evaluateRide, planRoute, pickupAt, hasKeyword, addLandmark, LANDMARKS, findLandmark as L } from './engine.js';
+import { parseRide, evaluateRide, planRoute, pickupAt, compareKeyword, hasKeyword, addLandmark, LANDMARKS, findLandmark as L } from './engine.js';
 
 const NOON = new Date('2026-11-13T12:00:00+07:00').getTime();
 
@@ -103,4 +103,12 @@ test('giờ hẹn đón và giá tối thiểu', () => {
   const cheap = { ...ride('Phúc Yên', 'Cầu Giấy'), price: 80000 };
   assert.match(evaluateRide(driver({ minPrice: 150000 }), cheap, NOON).reason, /Giá 80k \(dưới 150k\)/);
   assert.equal(evaluateRide(driver({ minPrice: 150000 }), ride('Phúc Yên', 'Cầu Giấy'), NOON).ok, true); // không ghi giá: không lọc
+});
+
+test('so sánh với bắt theo từ khoá', () => {
+  const msgs = ['Cần 2 ghế Phúc Yên đi Cầu Giấy 200k', 'Mỹ Đình đi Phúc Yên 1 khách', 'Xe 7c còn 3 ghế Phúc Yên ib', '1 khách Phúc Yên đi Mỹ Đình'];
+  const rows = compareKeyword(msgs, { pos: L('Bình Xuyên'), dest: L('Hà Nội'), keywords: ['Phúc Yên'] }, NOON);
+  assert.deepEqual(rows.map(r => r.dm), ['take', 'skip', 'skip', 'take']);
+  assert.deepEqual(rows.map(r => r.kw), ['take', 'wrong', 'wrong', 'skip']); // 2 cuốc nhầm chiếm hết ghế → lỡ cuốc thật
+  assert.match(rows[1].kwReason, /Ngược chiều/);
 });

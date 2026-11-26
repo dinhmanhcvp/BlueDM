@@ -225,3 +225,30 @@ export function evaluateRide(st, ride, now) {
   }
   return { ok: true, detour };
 }
+
+// ---------- So sánh với app bắt theo từ khoá ----------
+// Cùng loạt tin, cùng xe: "từ khoá" nhận mọi tin chứa từ khoá khi còn ghế; Blue DM xét tuyến bằng evaluateRide.
+// Mỗi cuốc từ khoá nhận được chấm lại bằng evaluateRide trên chính xe của nó để biết có nhận nhầm không.
+export function compareKeyword(messages, { pos, dest, totalSeats = 4, maxDetour = 20, minPrice = 0, keywords = [] }, now) {
+  const car = () => ({ pos, dest, totalSeats, walkIns: 0, maxDetour, minPrice, rides: [] });
+  const kw = car(), dm = car(), rows = [];
+  messages.forEach((text, i) => {
+    const t0 = performance.now();
+    const p = parseRide(text);
+    const ride = p.isRide && { ...p, id: 'r' + i, status: 'assigned' };
+    const ev = ride ? evaluateRide(dm, ride, now) : { ok: false, reason: p.reason };
+    const ms = performance.now() - t0;
+    if (ev.ok) dm.rides.push(ride);
+    const row = { text, ms, dm: ev.ok ? 'take' : 'skip', dmReason: ev.ok ? `Lệch +${ev.detour}p` : ev.reason };
+    const seats = p.seats || 1; // tin xe chào khách không có số ghế
+    if (hasKeyword(text, keywords) && freeSeats(kw) >= seats) {
+      const check = ride ? evaluateRide(kw, ride, now) : { ok: false, reason: p.reason };
+      row.kw = check.ok ? 'take' : 'wrong';
+      row.kwReason = check.ok ? `Lệch +${check.detour}p` : check.reason;
+      kw.walkIns += seats; // cuốc nhận nhầm vẫn chiếm ghế như cuốc thật
+      if (check.ok) { kw.walkIns -= seats; kw.rides.push(ride); }
+    } else row.kw = 'skip';
+    rows.push(row);
+  });
+  return rows;
+}

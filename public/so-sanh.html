@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>So sánh · Blue DM</title>
+<link rel="icon" href="/icon.svg">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@500;600;700;800&display=swap">
+<style>
+  :root { --bg:#F3F5F9; --s1:#FFFFFF; --s3:#EBEEF4; --tx:#10131A; --mut:#667085; --line:#E3E7EF; --acc:#1F5BFF; --acc-tx:#1F5BFF; --acc-soft:rgba(31,91,255,.10);
+    --bad-tx:#C8242B; --bad-soft:rgba(220,38,38,.10); --shadow:0 1px 2px rgba(16,24,40,.05), 0 6px 16px rgba(16,24,40,.06); }
+  @media (prefers-color-scheme: dark) { :root { --bg:#171A20; --s1:#1F232B; --s3:#2A2F39; --tx:#EEF1F6; --mut:#98A1B2; --line:#2F3540; --acc:#3D6BFF; --acc-tx:#8FADFF; --acc-soft:rgba(61,107,255,.16);
+    --bad-tx:#FF8A8A; --bad-soft:rgba(255,90,90,.14); --shadow:none; } }
+  * { box-sizing:border-box; }
+  body { margin:0 auto; max-width:760px; padding:20px 16px 48px; background:var(--bg); color:var(--tx); font:500 16px/1.5 "Be Vietnam Pro",system-ui,sans-serif; }
+  header { display:flex; align-items:center; gap:12px; }
+  header img { width:40px; height:40px; border-radius:10px; }
+  header b { font-size:24px; font-weight:800; letter-spacing:-.04em; } header b span { color:var(--acc-tx); }
+  h1 { font-size:24px; letter-spacing:-.02em; margin:18px 0 4px; }
+  .lead, .mut { color:var(--mut); } .lead { margin:0; }
+  section { background:var(--s1); border-radius:20px; box-shadow:var(--shadow); padding:16px; margin-top:14px; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  label { display:flex; flex-direction:column; gap:4px; font-size:13px; font-weight:700; color:var(--mut); }
+  select, input, textarea { font:inherit; color:var(--tx); background:var(--s3); border:0; border-radius:12px; padding:10px 12px; min-height:46px; width:100%; }
+  textarea { min-height:220px; resize:vertical; font-size:15px; line-height:1.6; }
+  .full { grid-column:1 / -1; }
+  button { font:inherit; font-weight:800; border:0; border-radius:16px; min-height:54px; width:100%; margin-top:12px; background:var(--acc); color:#fff; cursor:pointer; touch-action:manipulation; transition:transform .08s; }
+  button:active { transform:scale(.98); }
+  .score { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .score > div { background:var(--s3); border-radius:16px; padding:14px; }
+  .score h2 { font-size:15px; margin:0 0 6px; color:var(--mut); }
+  .big { font-size:40px; font-weight:800; letter-spacing:-.04em; line-height:1; font-variant-numeric:tabular-nums; }
+  .big small { font-size:15px; font-weight:700; letter-spacing:0; color:var(--mut); }
+  .bad { color:var(--bad-tx); } .acc { color:var(--acc-tx); }
+  ul.why { margin:8px 0 0; padding-left:18px; font-size:14px; }
+  .row { display:grid; grid-template-columns:1fr 1fr; gap:4px 10px; padding:12px 0; border-top:1px solid var(--line); font-size:14px; }
+  .row:first-child { border-top:0; }
+  .row .msg { grid-column:1 / -1; font-weight:700; font-size:15px; }
+  .tag { font-weight:800; } .tag.take { color:var(--acc-tx); } .tag.wrong { color:var(--bad-tx); } .tag.skip { color:var(--mut); }
+  .row.diff { background:var(--bad-soft); margin:0 -16px; padding:12px 16px; }
+  .num { font-variant-numeric:tabular-nums; }
+  @media (max-width:420px) { .score .big { font-size:32px; } }
+</style>
+</head>
+<body>
+<header><img src="/icon.svg" alt=""><b>Blue <span>DM</span></b></header>
+<h1>So với app bắt theo từ khoá</h1>
+<p class="lead">Cùng một loạt tin nhóm, cùng một xe. App từ khoá nhận mọi tin có chữ khớp khi còn ghế. Blue DM xét chiều đi, phút vòng, số ghế, giờ hẹn và giá.</p>
+
+<section>
+  <div class="grid">
+    <label>Xe đang ở<select id="from"></select></label>
+    <label>Điểm cuối<select id="dest"></select></label>
+    <label>Số ghế<input id="seats" type="number" inputmode="numeric" min="1" max="16" value="4"></label>
+    <label>Lệch tối đa (phút)<input id="maxDetour" type="number" inputmode="numeric" min="0" max="120" value="20"></label>
+    <label class="full">Từ khoá của app kia (cách nhau dấu phẩy)<input id="keywords" value="Vĩnh Yên, Phúc Yên, Mê Linh, Hà Nội, Mỹ Đình, Cầu Giấy"></label>
+    <label class="full">Tin nhóm Zalo, mỗi dòng 1 tin (dán tin thật vào đây)<textarea id="text">Cầu Giấy HN đi Vĩnh Yên 1 khách
+Xe 7c VY-HN còn 3 ghế ae ib
+Mỹ Đình về Phúc Yên 2 khách 250k
+Cần 2 ghế Phúc Yên đi Cầu Giấy, đi luôn. 0912.345.678 200k
+Có 1 khách Mê Linh đi Thanh Xuân
+1 khách Tam Đảo đi Mỹ Đình
+Đón 1 khách Nội Bài về Hoàn Kiếm 0901222333
+1 khách Phúc Yên đi Mỹ Đình 150k
+Bao xe Hà Nội lên Vĩnh Yên
+Cần 1 ghế Mê Linh đi Cầu Giấy</textarea></label>
+  </div>
+  <button id="run">So sánh</button>
+</section>
+
+<div id="out"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const LABEL = { take: 'Nhận', wrong: 'Nhận nhầm', skip: 'Bỏ qua' };
+
+fetch('/landmarks').then(r => r.json()).then(list => {
+  const opts = list.map(n => `<option>${esc(n)}</option>`).join('');
+  $('#from').innerHTML = opts; $('#dest').innerHTML = opts;
+  $('#from').value = 'Vĩnh Yên'; $('#dest').value = 'Hà Nội';
+  run();
+});
+
+async function run() {
+  const body = { from: $('#from').value, dest: $('#dest').value, seats: $('#seats').value, maxDetour: $('#maxDetour').value, keywords: $('#keywords').value, text: $('#text').value };
+  const r = await fetch('/compare', { method: 'POST', body: JSON.stringify(body) });
+  const rows = await r.json();
+  if (!r.ok) { $('#out').innerHTML = `<section class="bad">${esc(rows.error)}</section>`; return; }
+  const n = k => rows.filter(x => x.kw === k).length;
+  const kwTake = n('take') + n('wrong'), wrong = rows.filter(x => x.kw === 'wrong');
+  const lost = rows.filter(x => x.dm === 'take' && x.kw === 'skip').length;
+  const dmTake = rows.filter(x => x.dm === 'take').length;
+  const why = {};
+  for (const x of wrong) { const k = x.kwReason.replace(/[+\d]+p.*$/, '').replace(/ \(.*$/, '').trim() || x.kwReason; why[k] = (why[k] || 0) + 1; }
+  const avg = rows.reduce((s, x) => s + x.ms, 0) / (rows.length || 1);
+  $('#out').innerHTML = `
+    <section>
+      <div class="score">
+        <div><h2>App từ khoá</h2><div class="big">${kwTake} <small>cuốc nhận</small></div>
+          <div class="big bad" style="margin-top:8px">${wrong.length} <small>nhận nhầm</small></div>
+          ${wrong.length ? `<ul class="why">${Object.entries(why).map(([k, v]) => `<li>${esc(k)}: ${v}</li>`).join('')}</ul>` : ''}
+          ${lost ? `<p class="mut" style="margin:8px 0 0;font-size:14px">Lỡ ${lost} cuốc hợp đường vì ghế đã bị cuốc nhầm chiếm hoặc không khớp từ khoá.</p>` : ''}</div>
+        <div><h2>Blue DM</h2><div class="big acc">${dmTake} <small>cuốc nhận</small></div>
+          <div class="big" style="margin-top:8px">${rows.length - dmTake} <small>bỏ qua</small></div>
+          <p class="mut" style="margin:8px 0 0;font-size:14px">"Nhầm" chấm theo cùng ngưỡng ở trên (lệch tối đa, chiều đi, số ghế). Xét 1 tin trung bình <b class="num">${avg.toFixed(1)} ms</b> (trên server này, ước lượng đường, chưa tính trễ gửi Zalo).</p></div>
+      </div>
+    </section>
+    <section>${rows.map(x => `<div class="row ${x.kw === 'wrong' || (x.dm === 'take' && x.kw === 'skip') ? 'diff' : ''}">
+      <div class="msg">${esc(x.text)}</div>
+      <div><span class="mut">Từ khoá:</span> <span class="tag ${x.kw}">${LABEL[x.kw]}</span>${x.kw === 'wrong' ? ` · ${esc(x.kwReason)}` : ''}</div>
+      <div><span class="mut">Blue DM:</span> <span class="tag ${x.dm}">${LABEL[x.dm]}</span> · ${esc(x.dmReason)}</div>
+    </div>`).join('')}</section>`;
+}
+$('#run').onclick = run;
+</script>
+</body>
+</html>
