@@ -684,7 +684,7 @@ function feedHtml(s) {
   return (offers.length ? offers.map((f, i) => rideCard(f, s, i === 0)).join('') : `<div class="radar">
       <div class="rings ${on ? '' : 'off'}"><i></i><b></b></div>
       <div><h2>${s.free <= 0 ? 'Kín xe' : `Đang canh ${s.sim ? 'tin thử' : s.groups + ' nhóm Zalo'}`}</h2>
-        <p class="mut" style="margin-top:4px">${s.free <= 0 ? 'Tạm dừng bắt cuốc' : `Đã đọc ${s.stats.seen} tin · đã nhận ${s.stats.taken}${s.stats.done && s.stats.day === new Date(s.clock + 7 * 3600e3).toISOString().slice(0, 10) ? ` · hôm nay ${Math.round(s.stats.earned / 1000)}k` : ''}`}</p></div>
+        <p class="mut" style="margin-top:4px">${s.free <= 0 ? 'Tạm dừng bắt cuốc' : `Đã đọc ${s.stats.seen} tin · đã nhận ${s.stats.taken}`}</p></div>
     </div>`)
     + (rest.length ? `<section class="others card">
       <button class="others-h" data-others="1"><span class="grow" style="text-align:left">Cuốc khác</span><span class="n num">${rest.length}</span>${ic(othersOpen ? 'up' : 'chev', 18)}</button>
