@@ -147,14 +147,15 @@ async function liveDetour(d, ride) {
 
 async function ingest(d, text, source) {
   const cfg = cfgOf(d);
-  const g = source && (cfg.groups[source.threadId] ??= { name: '', watch: true, auto: true, waitMinute: false });
+  // tin demo giả nhóm Zalo nhưng không ghi vào danh sách nhóm thật
+  const g = source && (source.demo ? { name: source.group, watch: true, auto: true } : cfg.groups[source.threadId] ??= { name: '', watch: true, auto: true, waitMinute: false });
   if (g && !g.watch) return;
   const t = now(d);
   // cùng tin đăng nhiều nhóm (kể cả tin đang chờ Google trả lời)
   if (d.feed.some(f => f.text === text && t - f.at < 5 * 60000) || (d.inflight ??= new Set()).has(text)) return;
   d.stats.seen++;
   const p = parseRide(text), blocked = hasKeyword(text, cfg.block), allowed = hasKeyword(text, cfg.allow);
-  const msgTs = Number(source?.data.ts) || Date.now();
+  const msgTs = Number(source?.data?.ts) || Date.now();
   const item = {
     id: crypto.randomUUID(), at: t, realAt: Date.now(), text, source, group: g?.name || '',
     seats: p.seats, phone: p.phone, price: p.price, code: p.code, time: p.time,
@@ -213,7 +214,7 @@ function claim(d, item) {
 }
 
 function sendClaim(d, item) {
-  if (!item.source || !d.zalo) return;
+  if (!item.source || item.source.demo || !d.zalo) return; // tin demo không được gửi lên Zalo thật
   const wait = Math.max(0, item.waitUntil - Date.now()), cfg = cfgOf(d);
   if (wait) item.sendAt = item.waitUntil;
   setTimeout(() => d.zalo?.claim(item.source, item.pickup || '', d.st.claimMode, { mainPhone: licenses[d.code].mainPhone, reply: cfg.reply, code: item.code, text: item.replyText })
@@ -320,8 +321,18 @@ const actions = {
   sim(d, b) {
     if (b.on && !d.sim) saveState(); // giữ lộ trình thật trước khi chạy thử ghi đè
     d.sim = !!b.on;
+    for (const t of d.demoTimers || []) clearTimeout(t);
+    d.demoTimers = [];
     if (d.sim) Object.assign(d.st, { pos: findLandmark(b.from) || findLandmark('Vĩnh Yên'), rides: [], walkIns: 0 }), d.clock = Date.now();
     else { Object.assign(d.st, { rides: [], walkIns: 0 }); loadSaved(d); } // tắt chạy thử: bỏ khách giả, trả lại lộ trình thật
+    if (d.sim && b.demo) {
+      // demo: xe Vĩnh Yên → Hà Nội, tự bắt cuốc, tin nhóm Zalo giả tự đến theo kịch bản (cài đặt thật được trả lại khi dừng)
+      Object.assign(d.st, { pos: findLandmark('Vĩnh Yên'), dest: findLandmark('Hà Nội'), totalSeats: 4, maxDetour: 20, auto: true, grace: 5 });
+      d.feed = []; d.stats = { seen: 0, skipped: 0, taken: 0 };
+      d.demoTimers = DEMO_SCRIPT.map(([sec, group, text]) => setTimeout(() => {
+        if (d.sim) ingest(d, text, { demo: true, group }).catch(console.error);
+      }, sec * 1000));
+    }
   },
   zalo(d) { if (licenses[d.code].termsAt) startZalo(d); },
 };
@@ -430,6 +441,18 @@ function adminView() {
     },
   };
 }
+
+// Kịch bản demo: [giây thật kể từ lúc bắt đầu, tên nhóm, tin]. 1 giây thật = 30 giây đường.
+const DEMO_SCRIPT = [
+  [3, 'Xe ghép VY – HN', 'Xe 7c VY-HN còn 3 ghế ae ib'], // tin xe chào khách: bỏ qua im lặng
+  [6, 'Xe ghép VY – HN', 'Cần 2 ghế Phúc Yên đi Cầu Giấy, đi luôn. 0912.345.678 200k'], // hợp đường: tự nhận
+  [14, 'Taxi Phúc Yên', 'Cầu Giấy HN đi Vĩnh Yên 1 khách'], // ngược chiều: chặn
+  [22, 'Xe ghép Mê Linh', 'Có 1 khách Mê Linh đi Thanh Xuân'], // tự nhận
+  [30, 'Xe ghép VY – HN', 'Đón 1 khách Nội Bài về Hoàn Kiếm 0901222333'], // lệch quá ngưỡng
+  [38, 'Taxi Phúc Yên', '1 khách Phúc Yên đi Mỹ Đình 150k'], // tự nhận, kín xe
+  [46, 'Xe ghép Mê Linh', 'Cần 1 ghế Mê Linh đi Cầu Giấy'], // kín xe: bỏ
+  [54, 'Taxi Phúc Yên', '1k chợ Lương Sơn đi Bv Nam Học 300k Ct. code 88'], // chưa rõ tuyến: vào "Cuốc khác"
+];
 
 // Mô phỏng: mỗi giây thật = 30 giây đường, xe chạy tới điểm dừng kế tiếp rồi tự đón/trả
 setInterval(() => {

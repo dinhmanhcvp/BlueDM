@@ -325,6 +325,7 @@
     <span class="label">Chạy thử không cần Zalo</span>
     <select id="simFrom" aria-label="Điểm xuất phát"></select>
     <button class="btn" id="sim"></button>
+    <button class="btn acc" id="demo">Demo tự bắt cuốc (tin Zalo giả)</button>
     <div class="samples" id="samples"></div>
     <input id="msg" placeholder="Gõ tin nhóm rồi Enter…">
   </div>
@@ -754,6 +755,7 @@ function render(s) {
   const step = s.zaloStatus.startsWith('Đã quét') ? 3 : s.qr ? 2 : 1;
   $('#qrSteps').innerHTML = ['Hiện mã', 'Quét bằng Zalo', 'Xác nhận'].map((l, i) => `<span class="${i + 1 <= step ? 'on' : ''}">${i + 1}. ${l}</span>`).join('');
   $('#sim').textContent = s.sim ? 'Dừng chạy thử' : 'Chạy thử từ điểm trên';
+  $('#demo').hidden = s.sim;
   $('#lic').textContent = `Mã ${code} · hạn đến ${new Date(s.expires).toLocaleDateString('vi-VN')}`;
   set($('#feed'), s.feed.slice(0, 15).map(f => `<div class="feed ${f.status}">
     <b>${{ taken: 'Đã nhận', skip: 'Bỏ qua', offer: 'Chờ bấm', pending: 'Đang đếm ngược', maybe: 'Chưa rõ tuyến' }[f.status]}</b>
@@ -816,6 +818,7 @@ $('#qrCopy').onclick = async () => {
 };
 $('#dimBtn').onclick = () => { $('#panel').hidden = true; $('#dim').hidden = false; };
 $('#dim').onclick = () => $('#dim').hidden = true;
+$('#demo').onclick = () => { api('sim', { on: true, demo: true }); $('#panel').hidden = true; };
 $('#sim').onclick = () => { api('sim', { on: !S.sim, from: $('#simFrom').value }); $('#panel').hidden = true; };
 $('#msg').onkeydown = e => { if (e.key === 'Enter') { api('message', { text: e.target.value }); e.target.value = ''; } };
 // Chạm phản hồi tức thì: đổi màn hình tại chỗ trước, server xác nhận sau.
